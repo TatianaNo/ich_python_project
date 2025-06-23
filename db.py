@@ -1,7 +1,7 @@
 import pymysql
 from pymongo import MongoClient
 from settings import settings
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import os
 
@@ -106,7 +106,7 @@ def log_search_query_to_file(query, search_type, results_count):
         log_entry = {
             'query': query,
             'search_type': search_type,
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
             'results_count': results_count
         }
         
@@ -202,11 +202,10 @@ def log_search_query(query, search_type, results_count):
         try:
             mongo_db = initialize_mongo()
             logs_collection = mongo_db['search_queries']
-            
             log_entry = {
                 'query': query,
                 'search_type': search_type,
-                'timestamp': datetime.utcnow(),
+                'timestamp': datetime.now(timezone.utc),
                 'results_count': results_count
             }
             

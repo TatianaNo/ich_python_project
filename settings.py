@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+from urllib.parse import quote_plus
 
 # Load environment variables from .env file
 load_dotenv()
@@ -23,19 +24,32 @@ class Settings:
     MYSQL_USERNAME = os.getenv('MYSQL_USERNAME', 'root')
     MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD', '')
     
-    # Application settings
-    DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
-    SECRET_KEY = os.getenv('SECRET_KEY', 'default-secret-key')
-    
     @classmethod
     def get_mongo_connection_string(cls):
         """
-        Build MongoDB connection string based on settings
+        Build MongoDB connection string based on settings with proper URL encoding.
+        Supports both regular MongoDB and MongoDB Atlas (SRV) connections.
         """
         if cls.MONGO_USERNAME and cls.MONGO_PASSWORD:
-            return f'mongodb://{cls.MONGO_USERNAME}:{cls.MONGO_PASSWORD}@{cls.MONGO_HOST}:{cls.MONGO_PORT}/'
+            username = quote_plus(cls.MONGO_USERNAME)
+            password = quote_plus(cls.MONGO_PASSWORD)
+            return f'mongodb+srv://{username}:{password}@{cls.MONGO_HOST}/'
         else:
-            return f'mongodb://{cls.MONGO_HOST}:{cls.MONGO_PORT}/'
+            return f'mongodb+srv://{cls.MONGO_HOST}/'
+    
+    @classmethod
+    def get_mongo_config(cls):
+        """
+        Get MongoDB connection configuration
+        """
+        return {
+            'uri': cls.get_mongo_connection_string(),
+            'host': cls.MONGO_HOST,
+            'port': cls.MONGO_PORT,
+            'database': cls.MONGO_DB_NAME,
+            'username': cls.MONGO_USERNAME,
+            'password': cls.MONGO_PASSWORD
+        }
     
     @classmethod
     def get_mysql_config(cls):
