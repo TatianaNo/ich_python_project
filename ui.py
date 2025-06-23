@@ -1,4 +1,5 @@
 # UI module for user interaction
+import os
 
 # ANSI color codes
 BLUE = '\033[94m'
@@ -15,8 +16,13 @@ menu = {
     "9": "Выход"
 }
 
+def clear_screen():
+    """Clear the terminal screen."""
+    os.system('cls' if os.name == 'nt' else 'clear')
+
 def show_menu():
     """Display the main menu to the user."""
+    clear_screen()
     print(f"\n{BLUE}{'='*50}{RESET}")
     print(f"{YELLOW}{BOLD}СИСТЕМА ПОИСКА ФИЛЬМОВ{RESET}")
     print(f"{BLUE}{'='*50}{RESET}")
