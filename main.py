@@ -1,13 +1,12 @@
+# Main application entry point
 from ui import (
-    show_menu, get_menu_choice, get_search_keyword, get_genre_and_year_range,
-    display_film, display_films, display_popular_queries, show_exit_message,
-    BLUE, YELLOW, GREEN, RESET
+    show_menu, get_menu_choice, get_search_keyword, get_genre_choice, get_year_range_choice,
+    display_films, display_popular_queries, show_exit_message, search_films_with_pagination,
+    search_films_by_genre_with_pagination, search_films_by_year_range_with_pagination
 )
-from db import (
-    find_films_by_keyword, find_films_by_criteria,
-    close_all_connections
-)
-from settings import settings
+from mysql_connector import close_mysql_connection
+from log_writer import close_mongo_connection
+from formatter import format_success
 
 def main():
     """Main application loop."""
@@ -15,24 +14,26 @@ def main():
         show_menu()
         choice = get_menu_choice()        
         if choice == "1":
-            # Search by keyword
-            print(f"{GREEN}Вы выбрали поиск по ключевому слову.{RESET}")
+            # Search by keyword with pagination
+            print(format_success("Вы выбрали поиск по ключевому слову."))
             keyword = get_search_keyword()
-            films = find_films_by_keyword(keyword)
-            display_films(films)
+            search_films_with_pagination(keyword)
             
         elif choice == "2":
-            # Search by genre and year range
-            print(f"{GREEN}Вы выбрали поиск по жанру и диапазону годов.{RESET}")
-            criteria = get_genre_and_year_range()
-            films = find_films_by_criteria(
-                genre=criteria['genre'],
-                year_from=criteria['year_from'],
-                year_to=criteria['year_to']
-            )
-            display_films(films)
+            # Search by genre
+            print(format_success("Вы выбрали поиск по жанру."))
+            genre = get_genre_choice()
+            if genre:
+                search_films_by_genre_with_pagination(genre)
             
         elif choice == "3":
+            # Search by year range
+            print(format_success("Вы выбрали поиск по диапазону годов."))
+            year_params = get_year_range_choice()
+            if year_params:
+                search_films_by_year_range_with_pagination(year_params)
+            
+        elif choice == "4":
             # View popular queries
             display_popular_queries()
             
@@ -40,9 +41,10 @@ def main():
             # Exit
             break
     
-    # Close database connection when exiting
+    # Close database connections when exiting
     show_exit_message()
-    close_all_connections()
+    close_mysql_connection()
+    close_mongo_connection()
 
 if __name__ == "__main__":
     main()
