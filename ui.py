@@ -1,20 +1,31 @@
 # UI module for user interaction - only user interface logic
 from formatter import (
     clear_screen, format_title, format_menu_option, format_section_header,
-    format_film_title, format_film_detail, format_query_item, format_border,
-    format_error, format_success, format_info, format_warning, 
+    format_border,
+    format_error, format_info, format_warning, 
     format_prompt, format_wait_prompt, format_films_list,
     format_popular_queries_section, format_recent_queries_section,
-    format_general_stats_section, format_query_detail,
+    format_general_stats_section,
     format_pagination_info, format_pagination_prompt
 )
 
+from mysql_connector import close_mysql_connection, find_films_by_keyword, count_films_by_keyword
+from mysql_connector import get_all_genres
+from mysql_connector import get_year_range
+from mysql_connector import get_all_genres, get_year_range, find_films_by_criteria, count_films_by_genre
+from mysql_connector import find_films_by_actor_with_genre, count_films_by_actor
+from log_writer import log_search_query
+from log_writer import close_mongo_connection, log_search_query
+from log_stats import get_popular_queries, show_recent_queries, get_search_stats_from_file
+
+
 menu = {
-    "1": "Поиск по ключевому слову", 
-    "2": "Поиск по жанру",
-    "3": "Поиск по диапазону годов",
-    "4": "Посмотреть популярные запросы",
-    "9": "Выход"
+    "1": "Поиск фильма по названию",
+    "2": "Поиск фильма по жанру и диапазону годов выпуска",
+    "3": "Поиск фильма по актеру",
+    "4": "Просмотр популярных запросов",
+    "5": "Просмотр последних (уникальных) запросов",
+    "0": "Выход"
 }
 
 def show_menu():
@@ -45,7 +56,6 @@ def get_search_keyword():
 
 def get_genre_choice():
     """Get genre choice from user with list of available genres."""
-    from mysql_connector import get_all_genres
     
     print(format_section_header("Поиск по жанру"))
     
@@ -76,7 +86,6 @@ def get_genre_choice():
 
 def get_year_range_choice():
     """Get year range choice from user with available range info."""
-    from mysql_connector import get_year_range
     
     print(format_section_header("Поиск по диапазону годов"))
     
@@ -120,114 +129,108 @@ def get_year_range_choice():
         print(format_error("Неверный формат года. Введите числовое значение."))
         return get_year_range_choice()
 
-def search_films_by_genre_with_pagination(genre):
-    """Search films by genre with pagination support."""
-    from mysql_connector import find_films_by_genre, count_films_by_genre
-    from log_writer import log_search_query
+def search_film_by_title():
     
-    # Get total count first
-    total_results = count_films_by_genre(genre)
-    
-    if total_results == 0:
-        print(format_error(f"Фильмы жанра '{genre}' не найдены."))
-        input(format_wait_prompt())
+    keyword = input(format_prompt("Введите ключевое слово для поиска в названии фильма:")).strip()
+    if not keyword:
+        print(format_error("Ключевое слово не может быть пустым!"))
         return
-    
-    current_page = 1
-    results_per_page = 10
-    
+    offset = 0
+    total = count_films_by_keyword(keyword)
+    if total == 0:
+        print(format_error("Фильмы не найдены."))
+        return
     while True:
-        # Calculate offset
-        offset = (current_page - 1) * results_per_page
-        
-        # Get films for current page
-        films = find_films_by_genre(genre, limit=results_per_page, skip=offset)
-        
+        films = find_films_by_keyword(keyword, limit=10, skip=offset)
         if not films:
             print(format_info("Больше результатов нет."))
             break
-        
-        # Display pagination info
-        print(format_pagination_info(current_page, total_results, results_per_page))
-        
-        # Display films
         formatted_lines = format_films_list(films)
         for line in formatted_lines:
             print(line)
-        
-        # Check if there are more results
-        if offset + results_per_page >= total_results:
+        print(format_pagination_info(offset//10+1, total, 10))
+        if offset+10 >= total:
             print(format_info("Это все результаты."))
             break
-        
-        # Ask user if they want to continue
-        choice = input(format_pagination_prompt()).strip().lower()
-        if choice not in ['y', 'yes', 'да', 'д']:
+        if input(format_pagination_prompt()).strip().lower() not in ["y", "yes", "да", "д"]:
             break
-            
-        current_page += 1
-    
-    # Log the search
-    log_search_query(genre, 'genre', total_results)
-    
-    input(format_wait_prompt())
+        offset += 10
+    log_search_query(keyword, 'title', total)
 
-def search_films_by_year_range_with_pagination(year_params):
-    """Search films by year range with pagination support."""
-    from mysql_connector import find_films_by_year_range, count_films_by_year_range
-    from log_writer import log_search_query
-    
-    year_from = year_params.get('year_from')
-    year_to = year_params.get('year_to')
-    
-    # Get total count first
-    total_results = count_films_by_year_range(year_from, year_to)
-    
-    if total_results == 0:
-        year_range_str = f"{year_from or 'начало'} - {year_to or 'конец'}"
-        print(format_error(f"Фильмы в диапазоне годов {year_range_str} не найдены."))
-        input(format_wait_prompt())
+def search_film_by_genre_and_year():
+    genres = get_all_genres()
+    if not genres:
+        print(format_error("Не удалось получить список жанров."))
         return
-    
-    current_page = 1
-    results_per_page = 10
-    
+    print(format_info("Доступные жанры:"))
+    for i, genre in enumerate(genres, 1):
+        print(f"  {i}. {genre}")
+    year_info = get_year_range()
+    if not year_info:
+        print(format_error("Не удалось получить диапазон годов."))
+        return
+    min_year, max_year = year_info
+    print(format_info(f"Доступный диапазон годов: {min_year} - {max_year}"))
+    genre_input = input(format_prompt("Введите название жанра:")).strip()
+    if genre_input not in genres:
+        print(format_error("Жанр не найден."))
+        return
+    try:
+        year_from = int(input(format_prompt(f"Введите начальный год ({min_year}):")).strip())
+        year_to = int(input(format_prompt(f"Введите конечный год ({max_year}):")).strip())
+    except ValueError:
+        print(format_error("Годы должны быть числами."))
+        return
+    if not (min_year <= year_from <= max_year and min_year <= year_to <= max_year and year_from <= year_to):
+        print(format_error("Введён некорректный диапазон годов."))
+        return
+    offset = 0
+    total = count_films_by_genre(genre_input)
+    if total == 0:
+        print(format_error("Фильмы не найдены."))
+        return
     while True:
-        # Calculate offset
-        offset = (current_page - 1) * results_per_page
-        
-        # Get films for current page
-        films = find_films_by_year_range(year_from, year_to, limit=results_per_page, skip=offset)
-        
+        films = find_films_by_criteria(genre=genre_input, year_from=year_from, year_to=year_to, limit=10, skip=offset)
         if not films:
             print(format_info("Больше результатов нет."))
             break
-        
-        # Display pagination info
-        print(format_pagination_info(current_page, total_results, results_per_page))
-        
-        # Display films
         formatted_lines = format_films_list(films)
         for line in formatted_lines:
             print(line)
-        
-        # Check if there are more results
-        if offset + results_per_page >= total_results:
+        print(format_pagination_info(offset//10+1, total, 10))
+        if offset+10 >= total:
             print(format_info("Это все результаты."))
             break
-        
-        # Ask user if they want to continue
-        choice = input(format_pagination_prompt()).strip().lower()
-        if choice not in ['y', 'yes', 'да', 'д']:
+        if input(format_pagination_prompt()).strip().lower() not in ["y", "yes", "да", "д"]:
             break
-            
-        current_page += 1
-    
-    # Log the search
-    year_range_str = f"{year_from or 'начало'}-{year_to or 'конец'}"
-    log_search_query(year_range_str, 'year_range', total_results)
-    
-    input(format_wait_prompt())
+        offset += 10
+    log_search_query(f"{genre_input} {year_from}-{year_to}", 'genre_year', total)
+
+def search_film_by_actor():
+    keyword = input(format_prompt("Введите часть имени или фамилии актёра:")).strip()
+    if not keyword:
+        print(format_error("Поле не может быть пустым!"))
+        return
+    offset = 0
+    total = count_films_by_actor(keyword)
+    if total == 0:
+        print(format_error("Фильмы не найдены."))
+        return
+    while True:
+        films = find_films_by_actor_with_genre(keyword, limit=10, skip=offset)
+        if not films:
+            print(format_info("Больше результатов нет."))
+            break
+        for i, film in enumerate(films, 1+offset):
+            print(f"{i}. {film['film_title']} ({film['release_year']}) | Жанр: {film['genre']} | Актёр: {film['actor_name']}")
+        print(format_pagination_info(offset//10+1, total, 10))
+        if offset+10 >= total:
+            print(format_info("Это все результаты."))
+            break
+        if input(format_pagination_prompt()).strip().lower() not in ["y", "yes", "да", "д"]:
+            break
+        offset += 10
+    log_search_query(keyword, 'actor', total)
 
 def display_films(films):
     """Display a list of films using formatter."""
@@ -236,61 +239,8 @@ def display_films(films):
         print(line)
     input(format_wait_prompt())
 
-def search_films_with_pagination(keyword):
-    """Search films with pagination support."""
-    from mysql_connector import find_films_by_keyword, count_films_by_keyword
-    from log_writer import log_search_query
-    
-    # Get total count first
-    total_results = count_films_by_keyword(keyword)
-    
-    if total_results == 0:
-        print(format_error("Фильмы не найдены."))
-        input(format_wait_prompt())
-        return
-    
-    current_page = 1
-    results_per_page = 10
-    
-    while True:
-        # Calculate offset
-        offset = (current_page - 1) * results_per_page
-        
-        # Get films for current page
-        films = find_films_by_keyword(keyword, limit=results_per_page, skip=offset)
-        
-        if not films:
-            print(format_info("Больше результатов нет."))
-            break
-        
-        # Display pagination info
-        print(format_pagination_info(current_page, total_results, results_per_page))
-        
-        # Display films
-        formatted_lines = format_films_list(films)
-        for line in formatted_lines:
-            print(line)
-        
-        # Check if there are more results
-        if offset + results_per_page >= total_results:
-            print(format_info("Это все результаты."))
-            break
-        
-        # Ask user if they want to continue
-        choice = input(format_pagination_prompt()).strip().lower()
-        if choice not in ['y', 'yes', 'да', 'д']:
-            break
-            
-        current_page += 1
-    
-    # Log the search (log total results found)
-    log_search_query(keyword, 'keyword', total_results)
-    
-    input(format_wait_prompt())
-
 def display_popular_queries():
     """Display popular or recent queries using log_stats and formatter."""
-    from log_stats import get_popular_queries, get_recent_queries, get_search_stats_from_file
     
     print(format_title("СТАТИСТИКА ПОИСКОВЫХ ЗАПРОСОВ", 60))
     
@@ -301,7 +251,7 @@ def display_popular_queries():
         print(line)
     
     # Get and display recent queries
-    recent = get_recent_queries(5)
+    recent = show_recent_queries(5)
     recent_lines = format_recent_queries_section(recent)
     for line in recent_lines:
         print(line)
@@ -318,10 +268,22 @@ def display_popular_queries():
     print(format_border(60))
     input(format_wait_prompt())
 
+def show_recent_queries(limit=10):
+    """Get recent unique queries from logs."""
+    shown = set()
+    recent = show_recent_queries(limit)
+    for q in recent:
+        if q.get('query') not in shown:
+            print(q.get('query'))
+            shown.add(q.get('query'))
+
 def show_exit_message():
     """Display exit message."""
     print(format_info("Закрытие соединения с базой данных..."))
     print(format_warning("До свидания!"))
+    close_mysql_connection()
+    close_mongo_connection()
+
 
 def ask_continue():
     """Ask user if they want to continue with more results."""

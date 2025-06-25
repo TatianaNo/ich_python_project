@@ -1,12 +1,9 @@
 # Main application entry point
 from ui import (
-    show_menu, get_menu_choice, get_search_keyword, get_genre_choice, get_year_range_choice,
-    display_films, display_popular_queries, show_exit_message, search_films_with_pagination,
-    search_films_by_genre_with_pagination, search_films_by_year_range_with_pagination
+    show_recent_queries, show_menu, get_menu_choice, display_popular_queries, show_exit_message,
+    search_film_by_title, search_film_by_genre_and_year, search_film_by_actor
 )
-from mysql_connector import close_mysql_connection
-from log_writer import close_mongo_connection
-from formatter import format_success
+
 
 def main():
     """Main application loop."""
@@ -14,37 +11,35 @@ def main():
         show_menu()
         choice = get_menu_choice()        
         if choice == "1":
-            # Search by keyword with pagination
-            print(format_success("Вы выбрали поиск по ключевому слову."))
-            keyword = get_search_keyword()
-            search_films_with_pagination(keyword)
+            # Search by title
+            print("Вы выбрали поиск по названию.")
+            search_film_by_title()
             
         elif choice == "2":
-            # Search by genre
-            print(format_success("Вы выбрали поиск по жанру."))
-            genre = get_genre_choice()
-            if genre:
-                search_films_by_genre_with_pagination(genre)
+            # Search by genre and year range
+            print("Вы выбрали поиск по жанру и диапазону годов.")
+            search_film_by_genre_and_year()
             
         elif choice == "3":
-            # Search by year range
-            print(format_success("Вы выбрали поиск по диапазону годов."))
-            year_params = get_year_range_choice()
-            if year_params:
-                search_films_by_year_range_with_pagination(year_params)
+            # Search by actor
+            print("Вы выбрали поиск по актеру.")
+            search_film_by_actor()
             
         elif choice == "4":
             # View popular queries
             display_popular_queries()
             
-        elif choice == "9":
-            # Exit
+        elif choice == "5":
+            # View recent unique queries
+            print("Последние уникальные запросы:")
+            show_recent_queries()
+                    
+        elif choice == "0":
+            show_exit_message()
             break
     
     # Close database connections when exiting
-    show_exit_message()
-    close_mysql_connection()
-    close_mongo_connection()
+    
 
 if __name__ == "__main__":
     main()

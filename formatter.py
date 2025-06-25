@@ -1,14 +1,6 @@
 # Output formatting functions - only formatting, no business logic
 import os
 
-# ANSI color codes
-BLUE = '\033[94m'
-YELLOW = '\033[93m'
-GREEN = '\033[92m'
-RED = '\033[91m'
-RESET = '\033[0m'
-BOLD = '\033[1m'
-
 def clear_screen():
     """Clear the terminal screen."""
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -16,22 +8,22 @@ def clear_screen():
 def format_title(text, width=50):
     """Format a title with decorative borders."""
     border = "=" * width
-    return f"\n{BLUE}{border}{RESET}\n{YELLOW}{BOLD}{text.center(width)}{RESET}\n{BLUE}{border}{RESET}"
+    return f"\n{border}\n{text.center(width)}\n{border}"
 
 def format_menu_option(number, text):
     """Format a menu option."""
-    return f"  {YELLOW}{number}.{RESET} {text}"
+    return f"  {number}. {text}"
 
 def format_section_header(text):
     """Format a section header."""
-    return f"\n{GREEN}{text}:{RESET}"
+    return f"\n{text}:"
 
 def format_film_title(index, title, year=None):
     """Format a film title with index."""
     if year and year != "Не указан":
-        return f"\n{YELLOW}{index}.{RESET} {BOLD}{title}{RESET} {BLUE}({year}){RESET}"
+        return f"\n{index}. {title} ({year})"
     else:
-        return f"\n{YELLOW}{index}.{RESET} {BOLD}{title}{RESET}"
+        return f"\n{index}. {title}"
 
 def format_film_detail(label, value):
     """Format a film detail line."""
@@ -42,43 +34,43 @@ def format_film_detail(label, value):
 def format_query_item(index, query_text, count=None, timestamp=None):
     """Format a query item for statistics."""
     if count is not None:
-        return f"{YELLOW}{index}.{RESET} '{BLUE}{query_text}{RESET}' - {count} раз(а)"
+        return f"{index}. '{query_text}' - {count} раз(а)"
     elif timestamp is not None:
-        return f"{YELLOW}{index}.{RESET} '{BLUE}{query_text}{RESET}' - {timestamp}"
+        return f"{index}. '{query_text}' - {timestamp}"
     else:
-        return f"{YELLOW}{index}.{RESET} '{BLUE}{query_text}{RESET}'"
+        return f"{index}. '{query_text}'"
 
 def format_query_detail(label, value):
     """Format query detail line for statistics."""
     return f"   {label}: {value}"
 
-def format_border(width=60, color=BLUE):
+def format_border(width=60):
     """Format a decorative border."""
-    return f"{color}{'='*width}{RESET}"
+    return "="*width
 
 def format_error(message):
     """Format error message."""
-    return f"{RED}{message}{RESET}"
+    return f"ОШИБКА: {message}"
 
 def format_success(message):
     """Format success message."""
-    return f"{GREEN}{message}{RESET}"
+    return f"УСПЕХ: {message}"
 
 def format_info(message):
     """Format info message."""
-    return f"{BLUE}{message}{RESET}"
+    return f"ИНФО: {message}"
 
 def format_warning(message):
     """Format warning message."""
-    return f"{YELLOW}{message}{RESET}"
+    return f"ПРЕДУПРЕЖДЕНИЕ: {message}"
 
-def format_prompt(text, color=YELLOW):
+def format_prompt(text):
     """Format a user input prompt."""
-    return f"{color}{text}{RESET} "
+    return f"{text} "
 
 def format_wait_prompt():
     """Format wait for user prompt."""
-    return f"\n{YELLOW}Нажмите Enter для продолжения...{RESET}"
+    return "\nНажмите Enter для продолжения..."
 
 def format_films_list(films):
     """Format a complete list of films for display."""
@@ -122,7 +114,7 @@ def format_pagination_info(current_page, total_results, results_per_page=10):
     if total_results == 0:
         return format_info("Результатов не найдено")
     
-    return format_info(f"Показаны результаты {start_item}-{end_item} из {total_results} (страница {current_page} из {total_pages})")
+    return f"Показаны результаты {start_item}-{end_item} из {total_results} (страница {current_page} из {total_pages})"
 
 def format_pagination_prompt():
     """Format pagination continuation prompt."""

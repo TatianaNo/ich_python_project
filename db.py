@@ -1,3 +1,4 @@
+import pandas as pd
 import pymysql
 from pymongo import MongoClient
 from settings import settings
@@ -309,6 +310,34 @@ def get_recent_queries(limit=5):
 # MYSQL FUNCTIONS (Films Data)
 # =====================================================
 
+def get_pandas_dataframe_from_mysql(query, params=None):
+    """
+    Execute a SQL query and return results as a Pandas DataFrame.
+    
+    Args:
+        query (str): SQL query to execute
+        params (tuple): Parameters for the SQL query
+    
+    Returns:
+        pd.DataFrame: DataFrame with results
+    """
+    try:
+        connection = initialize_mysql()
+        cursor = connection.cursor(pymysql.cursors.DictCursor)
+        cursor.execute(query, params)
+        
+        results = cursor.fetchall()
+        columns = [i[0] for i in cursor.description]
+        df = pd.DataFrame(results, columns=columns)
+        
+        cursor.close()
+        
+        return df, results
+        
+    except Exception as e:
+        print(f"Error executing query: {e}")
+        return pd.DataFrame()
+
 def find_films_by_keyword(keyword, limit=10, skip=0):
     """
     Find films by keyword search in MySQL database.
@@ -322,27 +351,39 @@ def find_films_by_keyword(keyword, limit=10, skip=0):
         list: List of film dictionaries
     """
     try:
-        connection = initialize_mysql()
-        cursor = connection.cursor(pymysql.cursors.DictCursor)
+        # connection = initialize_mysql()
+        # cursor = connection.cursor(pymysql.cursors.DictCursor)
         
         # найти первые 10 фильмов, где в названии встречается ключевое слово (например, 'Love')
-        sql = """
-        SELECT title, description
-        FROM film_text
-        WHERE title LIKE %s
-        LIMIT %s OFFSET %s
-        """
+        # sql = """
+        # SELECT title, description
+        # FROM film_text
+        # WHERE title LIKE %s
+        # LIMIT %s OFFSET %s
+        # """
+        query = '''
+            SELECT ft.title, ft.description, f.release_year, c.name AS genre
+            FROM film_text ft
+            JOIN film f ON ft.film_id = f.film_id
+            JOIN film_category fc ON f.film_id = fc.film_id
+            JOIN category c ON fc.category_id = c.category_id
+            WHERE LOWER(ft.title) LIKE %s
+            LIMIT %s OFFSET %s;
+        '''
         
         search_pattern = f"%{keyword}%"
-        cursor.execute(sql, (search_pattern, limit, skip))
-        
-        results = cursor.fetchall()
-        cursor.close()
+        params=(search_pattern, limit, skip)
+        df, results = get_pandas_dataframe_from_mysql(query, params)
+        # cursor.execute(query, (search_pattern, limit, skip))
+        # results = cursor.fetchall()
+        # kolonki = [i[0] for i in cursor.description]
+        # df = pd.DataFrame(results, columns=kolonki)
+        # cursor.close()
         
         # Log the search
         log_search_query(keyword, 'keyword', len(results))
         
-        return results
+        return df
         
     except Exception as e:
         print(f"Error searching films by keyword '{keyword}': {e}")
@@ -363,12 +404,12 @@ def find_films_by_criteria(genre=None, year_from=None, year_to=None, limit=10, s
         list: List of film dictionaries
     """
     try:
-        connection = initialize_mysql()
-        cursor = connection.cursor(pymysql.cursors.DictCursor)
+        # connection = initialize_mysql()
+        # cursor = connection.cursor(pymysql.cursors.DictCursor)
         
         if genre and year_from and year_to:
             # найти фильмы по жанру и диапазону годов
-            sql = """
+            query = """
             SELECT f.title, f.release_year, c.name AS genre
             FROM film f
             JOIN film_category fc ON f.film_id = fc.film_id
@@ -376,11 +417,12 @@ def find_films_by_criteria(genre=None, year_from=None, year_to=None, limit=10, s
             WHERE c.name = %s AND f.release_year BETWEEN %s AND %s
             LIMIT %s OFFSET %s
             """
-            cursor.execute(sql, (genre, year_from, year_to, limit, skip))
+            params = (genre, year_from, year_to, limit, skip)
+            # cursor.execute(sql, (genre, year_from, year_to, limit, skip))
             
         elif genre:
             # найти первые 10 фильмов по жанру (например 'Comedy')
-            sql = """
+            query = """
             SELECT f.title, f.release_year, c.name AS genre
             FROM film f
             JOIN film_category fc ON f.film_id = fc.film_id
@@ -388,30 +430,35 @@ def find_films_by_criteria(genre=None, year_from=None, year_to=None, limit=10, s
             WHERE c.name = %s
             LIMIT %s OFFSET %s
             """
-            cursor.execute(sql, (genre, limit, skip))
+            params = (genre, limit, skip)
+            # cursor.execute(sql, (genre, limit, skip))
             
         elif year_from and year_to:
             # найти первые 10 фильмов по диапазону годов (например 2005-2012)
-            sql = """
+            query = """
             SELECT title, release_year
             FROM film
             WHERE release_year BETWEEN %s AND %s
             LIMIT %s OFFSET %s
             """
-            cursor.execute(sql, (year_from, year_to, limit, skip))
+            params = (year_from, year_to, limit, skip)
+            # cursor.execute(sql, (year_from, year_to, limit, skip))
             
         else:
             # если никаких критериев не указано, возвращаем пустой результат
             return []
         
-        results = cursor.fetchall()
-        cursor.close()
+        # results = cursor.fetchall()
+        # cursor.close()
         
         # Log the search
         search_criteria = f"genre:{genre}, years:{year_from}-{year_to}"
-        log_search_query(search_criteria, 'genre_year', len(results))
+        # 
         
-        return results
+        df, results = get_pandas_dataframe_from_mysql(query, params)
+        log_search_query(search_criteria, 'genre_year', len(results))
+
+        return df
         
     except Exception as e:
         print(f"Error searching films by criteria: {e}")
@@ -425,22 +472,24 @@ def get_all_genres():
         list: List of unique genres
     """
     try:
-        connection = initialize_mysql()
-        cursor = connection.cursor()
+        # connection = initialize_mysql()
+        # cursor = connection.cursor()
         
         # вывести все категории
-        sql = """
+        query = """
         SELECT name AS genre
         FROM category
         """
-        cursor.execute(sql)
+        # cursor.execute(sql)
         
-        results = cursor.fetchall()
-        cursor.close()
+        # results = cursor.fetchall()
+        # cursor.close()
         
-        # Extract genre names from tuples
-        genres = [row[0] for row in results]
-        return genres
+        # # Extract genre names from tuples
+        # genres = [row[0] for row in results]
+        
+        df, _ = get_pandas_dataframe_from_mysql(query)
+        return df
         
     except Exception as e:
         print(f"Error getting genres: {e}")
@@ -454,23 +503,24 @@ def get_year_range():
         dict: Dictionary with 'min_year' and 'max_year'
     """
     try:
-        connection = initialize_mysql()
-        cursor = connection.cursor()
+        # connection = initialize_mysql()
+        # cursor = connection.cursor()
         
         # вывести мин и мах года выпуска фильма
-        sql = """
+        query = """
         SELECT MIN(release_year) AS min_year, MAX(release_year) AS max_year
         FROM film
         """
-        cursor.execute(sql)
+        # cursor.execute(sql)
         
-        result = cursor.fetchone()
-        cursor.close()
-        
-        if result:
+        # result = cursor.fetchone()
+        # cursor.close()
+        _, results = get_pandas_dataframe_from_mysql(query)
+
+        if results:
             return {
-                'min_year': result[0],
-                'max_year': result[1]
+                'min_year': results[0],
+                'max_year': results[1]
             }
         else:
             return {'min_year': None, 'max_year': None}
@@ -491,17 +541,19 @@ def find_film_by_key(key: str):
         dict: The film document if found, otherwise None.
     """
     try:
-        connection = initialize_mysql()
-        cursor = connection.cursor(pymysql.cursors.DictCursor)
+        # connection = initialize_mysql()
+        # cursor = connection.cursor(pymysql.cursors.DictCursor)
         
         # Try to find by ID first, then by title
-        sql = "SELECT * FROM films WHERE id = %s OR title = %s LIMIT 1"
-        cursor.execute(sql, (key, key))
+        query = "SELECT * FROM films WHERE id = %s OR title = %s LIMIT 1"
+        # cursor.execute(sql, (key, key))
         
-        result = cursor.fetchone()
-        cursor.close()
-        
-        return result
+        # result = cursor.fetchone()
+        # cursor.close()
+        params = (key, key)
+        df, results = get_pandas_dataframe_from_mysql(query, params)
+        # log_search_query(search_criteria, 'genre_year', len(results))
+        return df
         
     except Exception as e:
         print(f"Error finding film by key '{key}': {e}")

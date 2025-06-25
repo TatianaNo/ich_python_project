@@ -411,3 +411,67 @@ def get_year_range():
     except Exception as e:
         print(f"Error getting year range: {e}")
         return None
+
+def find_films_by_actor_with_genre(actor_keyword, limit=10, skip=0):
+    """
+    Find films by part of actor's name or surname, with genre and year, with pagination.
+    Args:
+        actor_keyword (str): Part of actor's name or surname (case-insensitive)
+        limit (int): Number of results per page
+        skip (int): Offset for pagination
+    Returns:
+        list: List of film dictionaries with actor, title, year, genre
+    """
+    try:
+        connection = initialize_mysql()
+        cursor = connection.cursor(pymysql.cursors.DictCursor)
+        like_keyword = f"%{actor_keyword.lower()}%"
+        sql = '''
+            SELECT 
+                CONCAT(a.first_name, ' ', a.last_name) AS actor_name,
+                f.title AS film_title,
+                f.release_year,
+                c.name AS genre
+            FROM film f
+            JOIN film_actor fa ON f.film_id = fa.film_id
+            JOIN actor a ON fa.actor_id = a.actor_id
+            JOIN film_category fc ON f.film_id = fc.film_id
+            JOIN category c ON fc.category_id = c.category_id
+            WHERE LOWER(a.first_name) LIKE %s OR LOWER(a.last_name) LIKE %s
+            ORDER BY f.release_year
+            LIMIT %s OFFSET %s
+        '''
+        cursor.execute(sql, (like_keyword, like_keyword, limit, skip))
+        results = cursor.fetchall()
+        cursor.close()
+        return results
+    except Exception as e:
+        print(f"Error searching films by actor '{actor_keyword}': {e}")
+        return []
+
+def count_films_by_actor(actor_keyword):
+    """
+    Count total number of films matching actor keyword.
+    Args:
+        actor_keyword (str): Part of actor's name or surname
+    Returns:
+        int: Total number of matching films
+    """
+    try:
+        connection = initialize_mysql()
+        cursor = connection.cursor()
+        like_keyword = f"%{actor_keyword.lower()}%"
+        sql = '''
+            SELECT COUNT(*)
+            FROM film f
+            JOIN film_actor fa ON f.film_id = fa.film_id
+            JOIN actor a ON fa.actor_id = a.actor_id
+            WHERE LOWER(a.first_name) LIKE %s OR LOWER(a.last_name) LIKE %s
+        '''
+        cursor.execute(sql, (like_keyword, like_keyword))
+        result = cursor.fetchone()
+        cursor.close()
+        return result[0] if result else 0
+    except Exception as e:
+        print(f"Error counting films by actor '{actor_keyword}': {e}")
+        return 0

@@ -102,7 +102,7 @@ def get_popular_queries(limit=5):
     # Fallback to file-based queries
     return get_popular_queries_from_file(limit)
 
-def get_recent_queries(limit=5):
+def show_recent_queries(limit=5):
     """
     Get most recent search queries from MongoDB or local file.
     
