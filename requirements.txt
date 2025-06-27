@@ -1,6 +1,9 @@
 # Для работы с MySQL
 pymysql
 
+# Для работы с Pandas
+sqlalchemy 
+
 # Для работы с MongoDB
 pymongo
 

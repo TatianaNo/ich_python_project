@@ -9,14 +9,15 @@ from formatter import (
     format_pagination_info, format_pagination_prompt
 )
 
-from mysql_connector import close_mysql_connection, find_films_by_keyword, count_films_by_keyword
-from mysql_connector import get_all_genres
-from mysql_connector import get_year_range
-from mysql_connector import get_all_genres, get_year_range, find_films_by_criteria, count_films_by_genre
-from mysql_connector import find_films_by_actor_with_genre, count_films_by_actor
+# from mysql_connector import close_mysql_connection, find_films_by_keyword, count_films_by_keyword
+# from mysql_connector import get_all_genres
+# from mysql_connector import get_year_range
+# from mysql_connector import get_all_genres, get_year_range, find_films_by_criteria, count_films_by_genre
+# from mysql_connector import find_films_by_actor_with_genre, count_films_by_actor
 from log_writer import log_search_query
 from log_writer import close_mongo_connection, log_search_query
 from log_stats import get_popular_queries, show_recent_queries, get_search_stats_from_file
+from mysql_controler import count_films_by_keyword, find_films_by_keyword, get_all_genres
 
 
 menu = {
@@ -60,15 +61,16 @@ def get_genre_choice():
     print(format_section_header("Поиск по жанру"))
     
     # Get all available genres
-    genres = get_all_genres()
-    if not genres:
+    df_genres = get_all_genres()
+    if not df_genres.empty:
         print(format_error("Не удалось получить список жанров."))
         return None
     
     # Display available genres
     print(format_info("Доступные жанры:"))
-    for i, genre in enumerate(genres, 1):
-        print(f"  {i}. {genre}")
+    print(df_genres)
+    # for i, genre in enumerate(genres, 1):
+    #     print(f"  {i}. {genre}")
     
     # Get user choice
     while True:
@@ -141,11 +143,11 @@ def search_film_by_title():
         print(format_error("Фильмы не найдены."))
         return
     while True:
-        films = find_films_by_keyword(keyword, limit=10, skip=offset)
-        if not films:
+        df_films = find_films_by_keyword(keyword, limit=10, skip=offset)
+        if df_films.empty:
             print(format_info("Больше результатов нет."))
             break
-        formatted_lines = format_films_list(films)
+        formatted_lines = format_films_list(df_films)
         for line in formatted_lines:
             print(line)
         print(format_pagination_info(offset//10+1, total, 10))

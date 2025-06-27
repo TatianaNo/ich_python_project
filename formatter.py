@@ -72,13 +72,14 @@ def format_wait_prompt():
     """Format wait for user prompt."""
     return "\nНажмите Enter для продолжения..."
 
-def format_films_list(films):
+def format_films_list(df_films):
     """Format a complete list of films for display."""
-    if not films:
-        return [format_error("Фильмы не найдены.")]
     
     result = []
     
+    films = df_films.to_dict(orient='records')
+    # print(df_films)
+
     for i, film in enumerate(films, 1):
         title = film.get('title', 'Без названия')
         year = film.get('release_year', film.get('year'))
