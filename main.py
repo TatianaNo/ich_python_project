@@ -38,7 +38,7 @@ def main():
             show_exit_message()
             break
     
-    # Close database connections when exiting
+    # Close database connections when exiting 
     
 
 if __name__ == "__main__":
