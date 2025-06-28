@@ -1,5 +1,21 @@
 # Output formatting functions - only formatting, no business logic
 import os
+import textwrap
+
+from tabulate import tabulate
+
+def format_table(data, headers=None, align='left'):
+
+    table_data = []
+    for row in data:
+        formatted_row = [
+            '\n'.join(textwrap.wrap(' '.join(str(value).split()), width=50)) if isinstance(value, str) else value
+            for value in row.values()
+        ]
+        table_data.append(formatted_row)
+
+    return tabulate(table_data, headers=headers, tablefmt="grid", stralign="left")
+
 
 def clear_screen():
     """Clear the terminal screen."""
@@ -106,7 +122,7 @@ def format_films_list(df_films):
     
     return result
 
-def format_pagination_info(current_page, total_results, results_per_page=10):
+def format_pagination_info(current_page :int, total_results: int, results_per_page : int=10):
     """Format pagination information."""
     start_item = (current_page - 1) * results_per_page + 1
     end_item = min(current_page * results_per_page, total_results)

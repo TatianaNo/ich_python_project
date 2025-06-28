@@ -25,50 +25,42 @@ def initialize_mysql():
     
     return _mysql_connection
 
-def close_mysql_connection():
-    """
-    Close MySQL connection and clear cache.
-    """
-    global _mysql_connection
-    
-    if _mysql_connection:
-        _mysql_connection.close()
-        _mysql_connection = None
 
-def find_films_by_keyword(keyword, limit=10, skip=0):
-    """
-    Find films by keyword search in MySQL database.
+
+# def find_films_by_keyword(keyword, limit=10, skip=0):
+#     """
+#     Find films by keyword search in MySQL database.
     
-    Args:
-        keyword (str): Keyword to search for
-        limit (int): Maximum number of results
-        skip (int): Number of results to skip (for pagination)
+#     Args:
+#         keyword (str): Keyword to search for
+#         limit (int): Maximum number of results
+#         skip (int): Number of results to skip (for pagination)
     
-    Returns:
-        list: List of film dictionaries
-    """
-    try:
-        connection = initialize_mysql()
-        cursor = connection.cursor(pymysql.cursors.DictCursor)
+#     Returns:
+#         list: List of film dictionaries
+#     """
+#     try:
+#         connection = initialize_mysql()
+#         cursor = connection.cursor(pymysql.cursors.DictCursor)
         
-        # найти первые 10 фильмов, где в названии встречается ключевое слово (например, 'Love')
-        sql = """
-        SELECT title, description
-        FROM film_text
-        WHERE title LIKE %s
-        LIMIT %s OFFSET %s
-        """
+#         # найти первые 10 фильмов, где в названии встречается ключевое слово (например, 'Love')
+#         sql = """
+#         SELECT title, description
+#         FROM film_text
+#         WHERE title LIKE %s
+#         LIMIT %s OFFSET %s
+#         """
         
-        search_pattern = f"%{keyword}%"
-        cursor.execute(sql, (search_pattern, limit, skip))
+#         search_pattern = f"%{keyword}%"
+#         cursor.execute(sql, (search_pattern, limit, skip))
         
-        results = cursor.fetchall()
-        cursor.close()
+#         results = cursor.fetchall()
+#         cursor.close()
         
-        return results
+#         return results
         
-    except Exception as e:
-        print(f"Error searching films by keyword '{keyword}': {e}")
+#     except Exception as e:
+#         print(f"Error searching films by keyword '{keyword}': {e}")
         return []
 
 def count_films_by_keyword(keyword):
@@ -234,37 +226,37 @@ def find_films_by_genre(genre, limit=10, skip=0):
         print(f"Error finding films by genre: {e}")
         return []
 
-def count_films_by_genre(genre):
-    """
-    Count total films by genre in MySQL database.
+# def count_films_by_genre(genre):
+#     """
+#     Count total films by genre in MySQL database.
     
-    Args:
-        genre (str): Genre to count films for
+#     Args:
+#         genre (str): Genre to count films for
     
-    Returns:
-        int: Total number of films
-    """
-    try:
-        connection = initialize_mysql()
-        cursor = connection.cursor()
+#     Returns:
+#         int: Total number of films
+#     """
+#     try:
+#         connection = initialize_mysql()
+#         cursor = connection.cursor()
         
-        sql = """
-        SELECT COUNT(*) 
-        FROM film f
-        JOIN film_category fc ON f.film_id = fc.film_id
-        JOIN category c ON fc.category_id = c.category_id
-        WHERE c.name = %s
-        """
+#         sql = """
+#         SELECT COUNT(*) 
+#         FROM film f
+#         JOIN film_category fc ON f.film_id = fc.film_id
+#         JOIN category c ON fc.category_id = c.category_id
+#         WHERE c.name = %s
+#         """
         
-        cursor.execute(sql, (genre,))
-        result = cursor.fetchone()
-        cursor.close()
+#         cursor.execute(sql, (genre,))
+#         result = cursor.fetchone()
+#         cursor.close()
         
-        return result[0] if result else 0
+#         return result[0] if result else 0
         
-    except Exception as e:
-        print(f"Error counting films by genre: {e}")
-        return 0
+#     except Exception as e:
+#         print(f"Error counting films by genre: {e}")
+#         return 0
 
 def find_films_by_year_range(year_from=None, year_to=None, limit=10, skip=0):
     """
@@ -412,66 +404,3 @@ def get_year_range():
         print(f"Error getting year range: {e}")
         return None
 
-def find_films_by_actor_with_genre(actor_keyword, limit=10, skip=0):
-    """
-    Find films by part of actor's name or surname, with genre and year, with pagination.
-    Args:
-        actor_keyword (str): Part of actor's name or surname (case-insensitive)
-        limit (int): Number of results per page
-        skip (int): Offset for pagination
-    Returns:
-        list: List of film dictionaries with actor, title, year, genre
-    """
-    try:
-        connection = initialize_mysql()
-        cursor = connection.cursor(pymysql.cursors.DictCursor)
-        like_keyword = f"%{actor_keyword.lower()}%"
-        sql = '''
-            SELECT 
-                CONCAT(a.first_name, ' ', a.last_name) AS actor_name,
-                f.title AS film_title,
-                f.release_year,
-                c.name AS genre
-            FROM film f
-            JOIN film_actor fa ON f.film_id = fa.film_id
-            JOIN actor a ON fa.actor_id = a.actor_id
-            JOIN film_category fc ON f.film_id = fc.film_id
-            JOIN category c ON fc.category_id = c.category_id
-            WHERE LOWER(a.first_name) LIKE %s OR LOWER(a.last_name) LIKE %s
-            ORDER BY f.release_year
-            LIMIT %s OFFSET %s
-        '''
-        cursor.execute(sql, (like_keyword, like_keyword, limit, skip))
-        results = cursor.fetchall()
-        cursor.close()
-        return results
-    except Exception as e:
-        print(f"Error searching films by actor '{actor_keyword}': {e}")
-        return []
-
-def count_films_by_actor(actor_keyword):
-    """
-    Count total number of films matching actor keyword.
-    Args:
-        actor_keyword (str): Part of actor's name or surname
-    Returns:
-        int: Total number of matching films
-    """
-    try:
-        connection = initialize_mysql()
-        cursor = connection.cursor()
-        like_keyword = f"%{actor_keyword.lower()}%"
-        sql = '''
-            SELECT COUNT(*)
-            FROM film f
-            JOIN film_actor fa ON f.film_id = fa.film_id
-            JOIN actor a ON fa.actor_id = a.actor_id
-            WHERE LOWER(a.first_name) LIKE %s OR LOWER(a.last_name) LIKE %s
-        '''
-        cursor.execute(sql, (like_keyword, like_keyword))
-        result = cursor.fetchone()
-        cursor.close()
-        return result[0] if result else 0
-    except Exception as e:
-        print(f"Error counting films by actor '{actor_keyword}': {e}")
-        return 0
