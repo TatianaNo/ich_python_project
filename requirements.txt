@@ -1,14 +1,10 @@
 # Для работы с MySQL
 pymysql
 
-# Для работы с Pandas
-sqlalchemy 
-
 # Для работы с MongoDB
 pymongo
 
 #Для загрузки из файла .env в окружение os.getenv('MONGO_HOST'
 python-dotenv
-pandas
 
-prettytable
+tabulate

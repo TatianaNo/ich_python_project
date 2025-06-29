@@ -1,18 +1,9 @@
 # =====================================================
 # MYSQL FUNCTIONS (Films Data)
 # =====================================================
-
-import pandas as pd
 import pymysql
-from db import close_all_connections, initialize_mysql, initialize_mysql_engine
+from db import close_all_connections, initialize_mysql
 from mongo_controler import log_search_query
-
-# Установка отображения всех строк и столбцов
-pd.set_option('display.max_rows', None)     # Показывать все строки
-pd.set_option('display.max_columns', None)  # Показывать все столбцы
-pd.set_option('display.width', 0)           # Автоматическая ширина
-pd.set_option('display.max_colwidth', None) # Показывать весь текст в ячейках
-
 
 
 def get_head_row_from_mysql(query, params=None):
@@ -49,7 +40,7 @@ def get_from_mysql(query, params=None) -> list:
         
     except Exception as e:
         print(f"Error executing query: {e}")
-        return pd.DataFrame()    
+        return []    
 
 
 def find_films_by_keyword(keyword, limit=10, skip=0):
@@ -74,12 +65,9 @@ def find_films_by_keyword(keyword, limit=10, skip=0):
             WHERE LOWER(ft.title) LIKE %s
             LIMIT %s OFFSET %s;
         '''
-        search_pattern = f"%{keyword.lower()}%"
+        search_pattern = f"%{keyword.lower()}%" # формирую шаблон для поиска чтоб не использовать спецсимволы
         
-
-
-        
-        params=(search_pattern, limit, skip)
+        params=(search_pattern, limit, skip) # создаю параметры запроса, кортедж
 
         row, header = get_head_row_from_mysql(query, params)
         # Log the search
@@ -144,7 +132,7 @@ def find_films_by_criteria(filter :dict, limit=10, skip=0):
         print(f"Error searching films by criteria: {e}")
         return []
 
-def get_all_genres() -> pd.DataFrame:
+def get_all_genres():
     """
     Get all unique genres from MySQL films table.
     
@@ -195,11 +183,7 @@ def count_films_by_genre(filtr):
     except Exception as e:
         print(f"Error counting films by genre: {e}")
         return 0
-    
-
-# =====================================================
-# Additional functions for MySQL no pandas
-# =====================================================    
+  
 
 def count_films_by_keyword(keyword):
     """

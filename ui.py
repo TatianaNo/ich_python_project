@@ -3,11 +3,10 @@ from formatter import (
     clear_screen, format_table, format_title, format_menu_option, format_section_header,
     format_border,
     format_error, format_info, format_warning, 
-    format_prompt, format_wait_prompt, format_films_list,
+    format_prompt, format_wait_prompt,
     format_pagination_info, format_pagination_prompt
 )
-from log_writer import log_search_query
-from log_stats import get_popular_queries
+from mongo_controler import log_search_query, get_popular_queries
 from mysql_controler import (
         close_mysql_connection, count_films_by_actor, count_films_by_genre, 
         count_films_by_keyword, find_films_by_actor_with_genre, 
@@ -41,45 +40,6 @@ def get_menu_choice():
             return choice
         else:
             print(format_error("Неверный ввод. Попробуйте снова."))
-
-def get_search_keyword():
-    """Get search keyword from user."""
-    keyword = input(format_prompt("Введите ключевое слово для поиска:")).strip()
-    if not keyword:
-        print(format_error("Ключевое слово не может быть пустым!"))
-        return get_search_keyword()
-    return keyword
-
-def get_genre_choice():
-    """Get genre choice from user with list of available genres."""
-    
-    print(format_section_header("Поиск по жанру"))
-    
-    # Get all available genres
-    df_genres = get_all_genres()
-    if not df_genres.empty:
-        print(format_error("Не удалось получить список жанров."))
-        return None
-    
-    # Display available genres
-    print(format_info("Доступные жанры:"))
-    print(df_genres)
-    # for i, genre in enumerate(genres, 1):
-    #     print(f"  {i}. {genre}")
-    
-    # Get user choice
-    while True:
-        choice = input(format_prompt("Введите название жанра:")).strip()
-        if not choice:
-            print(format_error("Жанр не может быть пустым!"))
-            continue
-        
-        # Check if genre exists (case insensitive)
-        for genre in genres:
-            if choice.lower() == genre.lower():
-                return genre
-        
-        print(format_error(f"Жанр '{choice}' не найден. Попробуйте снова."))
 
 def get_year_range_choice():
     """Get year range choice from user with available range info."""
@@ -121,6 +81,7 @@ def search_film_by_title():
     total = count_films_by_keyword(keyword)
     if total == 0:
         print(format_error("Фильмы не найдены."))
+        input(format_wait_prompt())
         return
     while True:
         row, head = find_films_by_keyword(keyword, limit=10, skip=offset)
@@ -128,9 +89,6 @@ def search_film_by_title():
             print(format_info("Больше результатов нет."))
             break
         print(format_table(row, head))
-        # formatted_lines = format_films_list(df_films)
-        # for line in formatted_lines:
-        #     print(line)
         print(format_pagination_info(offset//10+1, total, 10))
         if offset+10 >= total:
             print(format_info("Это все результаты."))
@@ -150,9 +108,9 @@ def search_film_by_genre_and_year():
     print(format_info("Доступные жанры:"))
     for i, genre in enumerate(genres, 1):
         print(f"  {i}. {genre}")
-    genre_input = input(format_prompt("Введите название жанра:")).strip()
+    genre_input = input(format_prompt("Введите номер выбранного жанра:")).strip()
     if not genre_input.isdigit: 
-        print(format_error("Введите номер а не строку.")) 
+        print(format_error("Введите номер, а не строку.")) 
         return
     if int(genre_input) > len(genres):
         print(format_error("Выберите номер из списка."))
@@ -184,7 +142,6 @@ def search_film_by_genre_and_year():
         offset += 10
     log_search_query(f"{genre_input} {year["year_from"]}-{year["year_to"]}", 'genre_year', total)
     
-
 def search_film_by_actor():
     keyword = input(format_prompt("Введите часть имени или фамилии актёра:")).strip()
     if not keyword:
@@ -212,13 +169,6 @@ def search_film_by_actor():
         offset += 10
     log_search_query(keyword, 'actor', total)
 
-def display_films(films):
-    """Display a list of films using formatter."""
-    formatted_lines = format_films_list(films)
-    for line in formatted_lines:
-        print(line)
-    input(format_wait_prompt())
-
 def display_popular_queries():
     """Display popular or recent queries using log_stats and formatter."""
     
@@ -240,9 +190,3 @@ def show_exit_message():
     print(format_info("Закрытие соединения с базой данных..."))
     print(format_warning("До свидания!"))
     close_mysql_connection()
-
-
-def ask_continue():
-    """Ask user if they want to continue with more results."""
-    choice = input(format_prompt("Показать больше результатов? (y/n):")).strip().lower()
-    return choice in ['y', 'yes', 'да', 'д']

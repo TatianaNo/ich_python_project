@@ -1,16 +1,11 @@
-import pandas as pd
 import pymysql
 from pymongo import MongoClient
 from settings import settings
-
-from sqlalchemy import create_engine
-from sqlalchemy.engine import Engine
 
 # Global variables for connection caching
 _mongo_client = None
 _mongo_db = None
 _mysql_connection = None
-_sqlalchemy_engine: Engine = None
 _mongo_available = None
 
 def check_mongo_availability():
@@ -77,37 +72,6 @@ def initialize_mysql():
     _mysql_connection = pymysql.connect(**config)
     
     return _mysql_connection
-
-def initialize_mysql_engine() -> Engine:
-    """
-    Инициализация SQLAlchemy Engine для использования с Pandas.
-    Автоматически пересоздаёт engine при обрыве соединения.
-    """
-    global _sqlalchemy_engine
-
-    if _sqlalchemy_engine is not None:
-        try:
-            # Проверка живости соединения
-            conn = _sqlalchemy_engine.connect()
-            conn.close()
-            return _sqlalchemy_engine
-        except Exception:
-            _sqlalchemy_engine = None  # Обновим
-
-    # Конфигурация
-    config = settings.get_mysql_config()
-    user = config['user']
-    password = config['password']
-    host = config['host']
-    port = config['port']
-    database = config['database']
-
-    # Строка подключения
-    connection_url = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}"
-
-    # Создание engine
-    _sqlalchemy_engine = create_engine(connection_url, pool_pre_ping=True)
-    return _sqlalchemy_engine
 
 def close_all_connections():
     """
