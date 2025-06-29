@@ -8,6 +8,7 @@ _mongo_db = None
 _mysql_connection = None
 _mongo_available = None
 
+
 def check_mongo_availability():
     """
     Check if MongoDB is available and working.

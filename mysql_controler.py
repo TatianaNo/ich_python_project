@@ -70,8 +70,6 @@ def find_films_by_keyword(keyword, limit=10, skip=0):
         params=(search_pattern, limit, skip) # создаю параметры запроса, кортедж
 
         row, header = get_head_row_from_mysql(query, params)
-        # Log the search
-        log_search_query(keyword, 'keyword', len(row))
         
         return row, header
         
@@ -120,12 +118,7 @@ def find_films_by_criteria(filter :dict, limit=10, skip=0):
             {filter_res}
             LIMIT %s OFFSET %s  
         """
-        
-        search_criteria = f"genre:{genre}, years:{year_from}-{year_to}"
-        
         results, headers = get_head_row_from_mysql(query, tuple(param))
-        log_search_query(search_criteria, 'genre_year', len(results))
-
         return results, headers
         
     except Exception as e:

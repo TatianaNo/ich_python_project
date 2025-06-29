@@ -8,6 +8,7 @@ import os
 
 from db import check_mongo_availability, initialize_mongo
 
+_collection_name = 'search_logs'
 
 def log_search_query(query, search_type, results_count):
     """
@@ -22,7 +23,7 @@ def log_search_query(query, search_type, results_count):
     if check_mongo_availability():
         try:
             mongo_db = initialize_mongo()
-            logs_collection = mongo_db['search_queries']
+            logs_collection = mongo_db[_collection_name]
             log_entry = {
                 'query': query,
                 'search_type': search_type,
@@ -35,7 +36,6 @@ def log_search_query(query, search_type, results_count):
             
         except Exception as e:
             print(f"Error logging to MongoDB: {e}")
-
 
 def get_popular_queries(limit=5):
     """
@@ -51,7 +51,7 @@ def get_popular_queries(limit=5):
     if check_mongo_availability():
         try:
             mongo_db = initialize_mongo()
-            logs_collection = mongo_db['search_queries']
+            logs_collection = mongo_db[_collection_name]
             
             # Aggregate pipeline to count queries by text
             pipeline = [
@@ -76,3 +76,55 @@ def get_popular_queries(limit=5):
             
         except Exception as e:
             print(f"Error getting popular queries from MongoDB: {e}")
+
+def get_last_queries(limit=10):
+    """
+    Get recent unique queries from MongoDB or local file.
+    
+    Args:
+        limit (int): Maximum number of queries to return
+    
+    Returns:
+        list: List of recent unique queries with counts
+    """
+    # Try MongoDB first if available
+    if check_mongo_availability():
+        try:
+            mongo_db = initialize_mongo()
+            logs_collection = mongo_db[_collection_name]
+            
+            # Aggregate pipeline to get recent unique queries
+            pipeline = [
+                {
+                    '$group': {
+                        '_id': '$query',
+                        'count': {'$sum': 1},
+                        'search_type': {'$first': '$search_type'},
+                        'last_searched': {'$max': '$timestamp'}
+                    }
+                },
+                {
+                    '$sort': {'last_searched': -1}
+                },
+                {
+                    '$limit': limit
+                }
+            ]
+            
+            results = list(logs_collection.aggregate(pipeline))
+            return results
+            
+        except Exception as e:
+            print(f"Error getting recent queries from MongoDB: {e}")
+    
+    # Fallback to local file logging if MongoDB is not available
+    log_file_path = 'local_search_log.json'
+    if os.path.exists(log_file_path):
+        with open(log_file_path, 'r', encoding='utf-8') as f:
+            logs = json.load(f)
+        
+        # Sort by timestamp and get the last `limit` entries
+        logs.sort(key=lambda x: x['timestamp'], reverse=True)
+        return logs[:limit]
+    
+    return []            

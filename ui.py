@@ -6,7 +6,7 @@ from formatter import (
     format_prompt, format_wait_prompt,
     format_pagination_info, format_pagination_prompt
 )
-from mongo_controler import log_search_query, get_popular_queries
+from mongo_controler import get_last_queries, log_search_query, get_popular_queries
 from mysql_controler import (
         close_mysql_connection, count_films_by_actor, count_films_by_genre, 
         count_films_by_keyword, find_films_by_actor_with_genre, 
@@ -87,11 +87,13 @@ def search_film_by_title():
         row, head = find_films_by_keyword(keyword, limit=10, skip=offset)
         if not row:
             print(format_info("Больше результатов нет."))
+            input(format_wait_prompt())
             break
         print(format_table(row, head))
         print(format_pagination_info(offset//10+1, total, 10))
         if offset+10 >= total:
             print(format_info("Это все результаты."))
+            input(format_wait_prompt())
             break
         if input(format_pagination_prompt()).strip().lower() not in ["y", "yes", "да", "д"]:
             break
@@ -104,16 +106,19 @@ def search_film_by_genre_and_year():
     genres = get_all_genres()
     if not genres:
         print(format_error("Не удалось получить список жанров."))
+        input(format_wait_prompt())
         return
     print(format_info("Доступные жанры:"))
     for i, genre in enumerate(genres, 1):
         print(f"  {i}. {genre}")
     genre_input = input(format_prompt("Введите номер выбранного жанра:")).strip()
     if not genre_input.isdigit: 
-        print(format_error("Введите номер, а не строку.")) 
+        print(format_error("Введите номер, а не строку."))
+        input(format_wait_prompt()) 
         return
     if int(genre_input) > len(genres):
         print(format_error("Выберите номер из списка."))
+        input(format_wait_prompt())
         return
     genre = genres[int(genre_input)-1]
     print (format_prompt(f"Выбраный жанр: {genre} "))
@@ -124,11 +129,13 @@ def search_film_by_genre_and_year():
     total = count_films_by_genre(year)
     if total == 0:
         print(format_error("Фильмы не найдены."))
+        input(format_wait_prompt())
         return
     while True:
         films, headers = find_films_by_criteria(year, limit=10, skip=offset)
         if not films:
             print(format_info("Больше результатов нет."))
+            input(format_wait_prompt())
             break
         formatted_lines = format_table(films, headers)
         print(formatted_lines)
@@ -140,17 +147,19 @@ def search_film_by_genre_and_year():
         if input(format_pagination_prompt()).strip().lower() not in ["y", "yes", "да", "д"]:
             break
         offset += 10
-    log_search_query(f"{genre_input} {year["year_from"]}-{year["year_to"]}", 'genre_year', total)
+    log_search_query(f"{genre} {year["year_from"]}-{year["year_to"]}", 'genre_year', total)
     
 def search_film_by_actor():
     keyword = input(format_prompt("Введите часть имени или фамилии актёра:")).strip()
     if not keyword:
         print(format_error("Поле не может быть пустым!"))
+        input(format_wait_prompt())
         return
     offset = 0
     total = count_films_by_actor(keyword)
     if total == 0:
         print(format_error("Фильмы не найдены."))
+        input(format_wait_prompt())
         return
     while True:
         films, headers = find_films_by_actor_with_genre(keyword, limit=10, skip=offset)
@@ -169,22 +178,23 @@ def search_film_by_actor():
         offset += 10
     log_search_query(keyword, 'actor', total)
 
-def display_popular_queries():
+def display_popular_queries(limit=5):
     """Display popular or recent queries using log_stats and formatter."""
     
-    print(format_title("СТАТИСТИКА ПОИСКОВЫХ ЗАПРОСОВ", 60))
+    print(format_title(f"СТАТИСТИКА ПОПУЛЯРНЫХ {limit} ПОИСКОВЫХ ЗАПРОСОВ", 60))
     
     # Get and display popular queries
-    popular = get_popular_queries(5)
+    popular = get_popular_queries(limit=5)
     print(format_table(popular, ['_id', 'count', 'search_type', 'last_searched']))
-    print(format_border(60))
     input(format_wait_prompt())
 
-def show_recent_queries(limit=10):
+def show_recent_queries(limit=5):
     """Get recent unique queries from logs."""
-    recent = get_popular_queries(limit)
+    recent = get_last_queries(limit)
+    print(format_title(f"СТАТИСТИКА ПОСЛЕДНИХ {limit} УНИКАЛЬНЫХ ЗАПРОСОВ", 60))
     print(format_table(recent, ['_id', 'count', 'search_type', 'last_searched']))
-
+    input(format_wait_prompt())
+    
 def show_exit_message():
     """Display exit message."""
     print(format_info("Закрытие соединения с базой данных..."))
