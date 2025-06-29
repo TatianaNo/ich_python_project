@@ -1,16 +1,30 @@
 # UI module for user interaction - only user interface logic
 from formatter import (
-    clear_screen, format_table, format_title, format_menu_option, format_section_header,
+    clear_screen,
+    format_table,
+    format_title,
+    format_menu_option,
+    format_section_header,
     format_border,
-    format_error, format_info, format_warning, 
-    format_prompt, format_wait_prompt,
-    format_pagination_info, format_pagination_prompt
+    format_error,
+    format_info,
+    format_warning,
+    format_prompt,
+    format_wait_prompt,
+    format_pagination_info,
+    format_pagination_prompt,
 )
 from mongo_controler import get_last_queries, log_search_query, get_popular_queries
 from mysql_controler import (
-        close_mysql_connection, count_films_by_actor, count_films_by_genre, 
-        count_films_by_keyword, find_films_by_actor_with_genre, 
-        find_films_by_criteria, find_films_by_keyword, get_all_genres, get_year_range
+    close_mysql_connection,
+    count_films_by_actor,
+    count_films_by_genre,
+    count_films_by_keyword,
+    find_films_by_actor_with_genre,
+    find_films_by_criteria,
+    find_films_by_keyword,
+    get_all_genres,
+    get_year_range,
 )
 
 
@@ -20,8 +34,9 @@ menu = {
     "3": "Поиск фильма по актеру",
     "4": "Просмотр популярных запросов",
     "5": "Просмотр последних (уникальных) запросов",
-    "0": "Выход"
+    "0": "Выход",
 }
+
 
 def show_menu():
     """
@@ -33,6 +48,7 @@ def show_menu():
     for key, value in menu.items():
         print(format_menu_option(key, value))
     print(format_border())
+
 
 def get_menu_choice():
     """
@@ -47,6 +63,7 @@ def get_menu_choice():
         else:
             print(format_error("Неверный ввод. Попробуйте снова."))
 
+
 def get_year_range_choice():
     """
     Prompt the user to select a year range for film search.
@@ -55,10 +72,12 @@ def get_year_range_choice():
     """
     print(format_section_header("Поиск по диапазону годов"))
     year_info = get_year_range()
-    min_year, max_year = year_info['min_year'], year_info['max_year']
+    min_year, max_year = year_info["min_year"], year_info["max_year"]
     if year_info:
         print(format_info(f"Доступный диапазон годов: {min_year} - {max_year}"))
-    year_from = input(format_prompt(f"Введите начальный год (мин: {min_year}):")).strip()
+    year_from = input(
+        format_prompt(f"Введите начальный год (мин: {min_year}):")
+    ).strip()
     year_to = input(format_prompt(f"Введите конечный год (макс: {max_year}):")).strip()
     try:
         year_from = int(year_from) if year_from else min_year
@@ -66,17 +85,20 @@ def get_year_range_choice():
         if year_from and year_to and year_from > year_to:
             print(format_error("Начальный год не может быть больше конечного года!"))
             return get_year_range_choice()
-        return {'year_from': year_from, 'year_to': year_to}
+        return {"year_from": year_from, "year_to": year_to}
     except ValueError:
         print(format_error("Неверный формат года. Введите числовое значение."))
         return get_year_range_choice()
+
 
 def search_film_by_title():
     """
     Search for films by title keyword and display paginated results.
     Prompts the user for a keyword and handles pagination and logging.
     """
-    keyword = input(format_prompt("Введите ключевое слово для поиска в названии фильма:")).strip()
+    keyword = input(
+        format_prompt("Введите ключевое слово для поиска в названии фильма:")
+    ).strip()
     if not keyword:
         print(format_error("Ключевое слово не может быть пустым!"))
         return
@@ -93,16 +115,22 @@ def search_film_by_title():
             input(format_wait_prompt())
             break
         print(format_table(row, head))
-        print(format_pagination_info(offset//10+1, total, 10))
-        if offset+10 >= total:
+        print(format_pagination_info(offset // 10 + 1, total, 10))
+        if offset + 10 >= total:
             print(format_info("Это все результаты."))
             input(format_wait_prompt())
             break
-        if input(format_pagination_prompt()).strip().lower() not in ["y", "yes", "да", "д"]:
+        if input(format_pagination_prompt()).strip().lower() not in [
+            "y",
+            "yes",
+            "да",
+            "д",
+        ]:
             break
         offset += 10
-    log_search_query(keyword, 'title', total)
+    log_search_query(keyword, "title", total)
     input(format_wait_prompt())
+
 
 def search_film_by_genre_and_year():
     """
@@ -118,16 +146,16 @@ def search_film_by_genre_and_year():
     for i, genre in enumerate(genres, 1):
         print(f"  {i}. {genre}")
     genre_input = input(format_prompt("Введите номер выбранного жанра:")).strip()
-    if not genre_input.isdigit: 
+    if not genre_input.isdigit:
         print(format_error("Введите номер, а не строку."))
-        input(format_wait_prompt()) 
+        input(format_wait_prompt())
         return
     if int(genre_input) > len(genres):
         print(format_error("Выберите номер из списка."))
         input(format_wait_prompt())
         return
-    genre = genres[int(genre_input)-1]
-    print (format_prompt(f"Выбраный жанр: {genre} "))
+    genre = genres[int(genre_input) - 1]
+    print(format_prompt(f"Выбраный жанр: {genre} "))
     year = get_year_range_choice()
     offset = 0
     year["genre"] = genre
@@ -144,15 +172,23 @@ def search_film_by_genre_and_year():
             break
         formatted_lines = format_table(films, headers)
         print(formatted_lines)
-        print(format_pagination_info(offset//10+1, total, 10))
-        if offset+10 >= total:
+        print(format_pagination_info(offset // 10 + 1, total, 10))
+        if offset + 10 >= total:
             print(format_info("Это все результаты."))
             input(format_wait_prompt())
             break
-        if input(format_pagination_prompt()).strip().lower() not in ["y", "yes", "да", "д"]:
+        if input(format_pagination_prompt()).strip().lower() not in [
+            "y",
+            "yes",
+            "да",
+            "д",
+        ]:
             break
         offset += 10
-    log_search_query(f"{genre} {year["year_from"]}-{year["year_to"]}", 'genre_year', total)
+    log_search_query(
+        f"{genre} {year["year_from"]}-{year["year_to"]}", "genre_year", total
+    )
+
 
 def search_film_by_actor():
     """
@@ -177,15 +213,21 @@ def search_film_by_actor():
             break
         films_table = format_table(films, headers)
         print(films_table)
-        print(format_pagination_info(offset//10+1, total, 10))
-        if offset+10 >= total:
+        print(format_pagination_info(offset // 10 + 1, total, 10))
+        if offset + 10 >= total:
             print(format_info("Это все результаты."))
             input(format_wait_prompt())
             break
-        if input(format_pagination_prompt()).strip().lower() not in ["y", "yes", "да", "д"]:
+        if input(format_pagination_prompt()).strip().lower() not in [
+            "y",
+            "yes",
+            "да",
+            "д",
+        ]:
             break
         offset += 10
-    log_search_query(keyword, 'actor', total)
+    log_search_query(keyword, "actor", total)
+
 
 def display_popular_queries(limit=5):
     """
@@ -195,8 +237,9 @@ def display_popular_queries(limit=5):
     """
     print(format_title(f"СТАТИСТИКА ПОПУЛЯРНЫХ {limit} ПОИСКОВЫХ ЗАПРОСОВ", 60))
     popular = get_popular_queries(limit=5)
-    print(format_table(popular, ['_id', 'count', 'search_type', 'last_searched']))
+    print(format_table(popular, ["_id", "count", "search_type", "last_searched"]))
     input(format_wait_prompt())
+
 
 def show_recent_queries(limit=5):
     """
@@ -206,8 +249,9 @@ def show_recent_queries(limit=5):
     """
     recent = get_last_queries(limit)
     print(format_title(f"СТАТИСТИКА ПОСЛЕДНИХ {limit} УНИКАЛЬНЫХ ЗАПРОСОВ", 60))
-    print(format_table(recent, ['_id', 'count', 'search_type', 'last_searched']))
+    print(format_table(recent, ["_id", "count", "search_type", "last_searched"]))
     input(format_wait_prompt())
+
 
 def show_exit_message():
     """

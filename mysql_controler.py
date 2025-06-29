@@ -19,6 +19,7 @@ def get_head_row_from_mysql(query, params=None):
     headers = [desc[0] for desc in cursor.description]
     return results, headers
 
+
 def get_from_mysql(query, params=None) -> list:
     """
     Execute a SQL query and return results as a list of dictionaries.
@@ -36,7 +37,8 @@ def get_from_mysql(query, params=None) -> list:
         return results
     except Exception as e:
         print(f"Error executing query: {e}")
-        return []    
+        return []
+
 
 def find_films_by_keyword(keyword, limit=10, skip=0):
     """
@@ -49,7 +51,7 @@ def find_films_by_keyword(keyword, limit=10, skip=0):
         tuple: (list of film dictionaries, list of column headers)
     """
     try:
-        query = '''
+        query = """
             SELECT ft.title, ft.description, f.release_year, c.name AS genre
             FROM film_text ft
             JOIN film f ON ft.film_id = f.film_id
@@ -57,7 +59,7 @@ def find_films_by_keyword(keyword, limit=10, skip=0):
             JOIN category c ON fc.category_id = c.category_id
             WHERE LOWER(ft.title) LIKE %s
             LIMIT %s OFFSET %s;
-        '''
+        """
         search_pattern = f"%{keyword.lower()}%"
         params = (search_pattern, limit, skip)
         row, header = get_head_row_from_mysql(query, params)
@@ -66,7 +68,8 @@ def find_films_by_keyword(keyword, limit=10, skip=0):
         print(f"Error searching films by keyword '{keyword}': {e}")
         return []
 
-def find_films_by_criteria(filter :dict, limit=10, skip=0):
+
+def find_films_by_criteria(filter: dict, limit=10, skip=0):
     """
     Find films by genre and year criteria in the MySQL database.
     Args:
@@ -81,15 +84,15 @@ def find_films_by_criteria(filter :dict, limit=10, skip=0):
         param = []
         filter_res = ""
         for item, value in filter.items():
-            if item == 'genre':
-                text_filter.append('c.name = %s')
-            elif item == 'year_from':
-                text_filter.append('f.release_year >= %s')
-            elif item == 'year_to':
-                text_filter.append('f.release_year <= %s')
+            if item == "genre":
+                text_filter.append("c.name = %s")
+            elif item == "year_from":
+                text_filter.append("f.release_year >= %s")
+            elif item == "year_to":
+                text_filter.append("f.release_year <= %s")
             param.append(value)
         if text_filter:
-            filter_res = "WHERE "+  ' and '.join(text_filter)
+            filter_res = "WHERE " + " and ".join(text_filter)
         param.append(limit)
         param.append(skip)
         query = f"""
@@ -98,13 +101,14 @@ def find_films_by_criteria(filter :dict, limit=10, skip=0):
             JOIN film_category fc ON f.film_id = fc.film_id
             JOIN category c ON fc.category_id = c.category_id
             {filter_res}
-            LIMIT %s OFFSET %s  
+            LIMIT %s OFFSET %s
         """
         results, headers = get_head_row_from_mysql(query, tuple(param))
         return results, headers
     except Exception as e:
         print(f"Error searching films by criteria: {e}")
         return []
+
 
 def get_all_genres():
     """
@@ -123,6 +127,7 @@ def get_all_genres():
         print(f"Error getting genres: {e}")
         return []
 
+
 def count_films_by_genre(filtr):
     """
     Count total films by genre in the MySQL database.
@@ -139,13 +144,13 @@ def count_films_by_genre(filtr):
         JOIN category c ON fc.category_id = c.category_id
         WHERE c.name = %s and f.release_year BETWEEN %s AND %s
         """
-        params = (filtr['genre'], filtr['year_from'], filtr['year_to'])
+        params = (filtr["genre"], filtr["year_from"], filtr["year_to"])
         results = get_from_mysql(query, params)
-        return results[0]['count_film'] if results else 0
+        return results[0]["count_film"] if results else 0
     except Exception as e:
         print(f"Error counting films by genre: {e}")
         return 0
-  
+
 
 def count_films_by_keyword(keyword):
     """
@@ -163,10 +168,11 @@ def count_films_by_keyword(keyword):
         """
         search_pattern = f"%{keyword}%"
         result = get_from_mysql(sql, (search_pattern,))
-        return result[0]['total'] if result else 0
+        return result[0]["total"] if result else 0
     except Exception as e:
         print(f"Error counting films by keyword '{keyword}': {e}")
         return 0
+
 
 def count_films_by_actor(actor_keyword):
     """
@@ -178,18 +184,19 @@ def count_films_by_actor(actor_keyword):
     """
     try:
         like_keyword = f"%{actor_keyword.lower()}%"
-        query = '''
+        query = """
             SELECT COUNT(*) ct
             FROM film f
             JOIN film_actor fa ON f.film_id = fa.film_id
             JOIN actor a ON fa.actor_id = a.actor_id
             WHERE LOWER(a.first_name) LIKE %s OR LOWER(a.last_name) LIKE %s
-        '''
-        result= get_from_mysql(query, (like_keyword, like_keyword))
-        return result[0]['ct'] if result else 0
+        """
+        result = get_from_mysql(query, (like_keyword, like_keyword))
+        return result[0]["ct"] if result else 0
     except Exception as e:
         print(f"Error counting films by actor '{actor_keyword}': {e}")
         return 0
+
 
 def find_films_by_actor_with_genre(actor_keyword, limit=10, skip=0):
     """
@@ -203,8 +210,8 @@ def find_films_by_actor_with_genre(actor_keyword, limit=10, skip=0):
     """
     try:
         like_keyword = f"%{actor_keyword.lower()}%"
-        query = '''
-            SELECT 
+        query = """
+            SELECT
                 CONCAT(a.first_name, ' ', a.last_name) AS actor_name,
                 f.title AS film_title,
                 f.release_year,
@@ -217,12 +224,15 @@ def find_films_by_actor_with_genre(actor_keyword, limit=10, skip=0):
             WHERE LOWER(a.first_name) LIKE %s OR LOWER(a.last_name) LIKE %s
             ORDER BY f.release_year
             LIMIT %s OFFSET %s
-        '''
-        results, headers = get_head_row_from_mysql(query, (like_keyword, like_keyword, limit, skip))
+        """
+        results, headers = get_head_row_from_mysql(
+            query, (like_keyword, like_keyword, limit, skip)
+        )
         return results, headers
     except Exception as e:
         print(f"Error searching films by actor '{actor_keyword}': {e}")
         return []
+
 
 def get_year_range():
     """
@@ -235,7 +245,7 @@ def get_year_range():
         SELECT MIN(release_year) AS min_year, MAX(release_year) AS max_year
         FROM film
         """
-        result = get_from_mysql(sql)        
+        result = get_from_mysql(sql)
         if result:
             return result[0]
         else:
@@ -243,6 +253,7 @@ def get_year_range():
     except Exception as e:
         print(f"Error getting year range: {e}")
         return None
+
 
 def close_mysql_connection():
     """

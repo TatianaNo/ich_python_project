@@ -21,9 +21,8 @@ def check_mongo_availability():
         return _mongo_available
     try:
         mongo_config = settings.get_mongo_config()
-        client = MongoClient(mongo_config['uri'], 
-                            serverSelectionTimeoutMS=3000)
-        client.admin.command('ping')  # Test connection
+        client = MongoClient(mongo_config["uri"], serverSelectionTimeoutMS=3000)
+        client.admin.command("ping")  # Test connection
         _mongo_available = True
         return True
     except Exception as e:
@@ -32,6 +31,7 @@ def check_mongo_availability():
         print("   Logging will be performed to a local file")
         return False
 
+
 def initialize_mongo():
     """
     Initialize a MongoDB connection for logs and statistics with caching.
@@ -39,22 +39,23 @@ def initialize_mongo():
     Reuses the connection if it is already open and alive.
     """
     global _mongo_client, _mongo_db
-    
+
     # Return cached connection if exists
     if _mongo_client is not None and _mongo_db is not None:
         try:
-            _mongo_client.admin.command('ping')
+            _mongo_client.admin.command("ping")
             return _mongo_db
         except Exception:
             _mongo_client = None
             _mongo_db = None
-    
+
     # Create new connection
     connection_string = settings.get_mongo_connection_string()
     _mongo_client = MongoClient(connection_string)
     _mongo_db = _mongo_client[settings.MONGO_DB_NAME]
-    
+
     return _mongo_db
+
 
 def initialize_mysql():
     """
@@ -63,7 +64,7 @@ def initialize_mysql():
     Reuses the connection if it is already open and alive.
     """
     global _mysql_connection
-    
+
     # Return cached connection if exists and is alive
     if _mysql_connection is not None:
         try:
@@ -71,12 +72,13 @@ def initialize_mysql():
             return _mysql_connection
         except Exception:
             _mysql_connection = None
-    
+
     # Create new connection
     config = settings.get_mysql_config()
     _mysql_connection = pymysql.connect(**config)
-    
+
     return _mysql_connection
+
 
 def close_all_connections():
     """
@@ -84,13 +86,13 @@ def close_all_connections():
     Use this for proper application shutdown.
     """
     global _mongo_client, _mongo_db, _mysql_connection
-    
+
     # Close MongoDB connection
     if _mongo_client:
         _mongo_client.close()
         _mongo_client = None
         _mongo_db = None
-    
+
     # Close MySQL connection
     if _mysql_connection:
         _mysql_connection.close()
@@ -99,4 +101,3 @@ def close_all_connections():
 
 # Alias for backward compatibility
 close_db_connection = close_all_connections
-

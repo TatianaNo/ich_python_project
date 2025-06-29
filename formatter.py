@@ -4,7 +4,8 @@ import os  # for clearing the screen
 import textwrap  # for wrapping text in table cells
 from tabulate import tabulate  # for formatting tables
 
-def format_table(data, headers=None, align='left'):
+
+def format_table(data, headers=None, align="left"):
     """
     Format a list of dictionaries as a table for console output.
     Wraps long text in cells for better readability.
@@ -20,22 +21,24 @@ def format_table(data, headers=None, align='left'):
     table_data = []
     for row in data:
         formatted_row = [
-            '\n'.join(textwrap.wrap(' '.join(str(value).split()), 
-                                    width=50)) 
-                                    if isinstance(value, str) 
-                                    else value
+            (
+                "\n".join(textwrap.wrap(" ".join(str(value).split()), width=50))
+                if isinstance(value, str)
+                else value
+            )
             for value in row.values()
         ]
         table_data.append(formatted_row)
 
-    return tabulate(table_data, headers=headers, tablefmt="grid", 
-                    stralign="left")
+    return tabulate(table_data, headers=headers, tablefmt="grid", stralign="left")
+
 
 def clear_screen():
     """
     Clear the terminal screen (cross-platform).
     """
-    os.system('cls' if os.name == 'nt' else 'clear')
+    os.system("cls" if os.name == "nt" else "clear")
+
 
 def format_title(text, width=50):
     """
@@ -51,6 +54,7 @@ def format_title(text, width=50):
     border = "=" * width
     return f"\n{border}\n{text.center(width)}\n{border}"
 
+
 def format_menu_option(number, text):
     """
     Format a menu option for display.
@@ -64,6 +68,7 @@ def format_menu_option(number, text):
     """
     return f"  {number}. {text}"
 
+
 def format_section_header(text):
     """
     Format a section header for display.
@@ -76,6 +81,7 @@ def format_section_header(text):
     """
     return f"\n{text}:"
 
+
 def format_border(width=50):
     """
     Format a decorative border line.
@@ -86,7 +92,8 @@ def format_border(width=50):
     Returns:
         str: Border string.
     """
-    return "="*width
+    return "=" * width
+
 
 def format_error(message):
     """
@@ -100,6 +107,7 @@ def format_error(message):
     """
     return f"ОШИБКА: {message}"
 
+
 def format_info(message):
     """
     Format an info message for display.
@@ -111,6 +119,7 @@ def format_info(message):
         str: Formatted info message.
     """
     return f"ИНФО: {message}"
+
 
 def format_warning(message):
     """
@@ -124,6 +133,7 @@ def format_warning(message):
     """
     return f"ПРЕДУПРЕЖДЕНИЕ: {message}"
 
+
 def format_prompt(text):
     """
     Format a user input prompt.
@@ -136,6 +146,7 @@ def format_prompt(text):
     """
     return f"{text} "
 
+
 def format_wait_prompt():
     """
     Format a prompt to wait for user input.
@@ -146,7 +157,9 @@ def format_wait_prompt():
     return "\n Нажмите Enter для продолжения..."
 
 
-def format_pagination_info(current_page: int, total_results: int, results_per_page: int = 10):
+def format_pagination_info(
+    current_page: int, total_results: int, results_per_page: int = 10
+):
     """
     Format pagination information for display.
 
@@ -167,6 +180,7 @@ def format_pagination_info(current_page: int, total_results: int, results_per_pa
 
     return f"Показаны результаты {start_item}-{end_item} из {total_results} (страница {current_page} из {total_pages})"
 
+
 def format_pagination_prompt():
     """
     Format a prompt for pagination continuation.
@@ -175,5 +189,3 @@ def format_pagination_prompt():
         str: Pagination prompt string.
     """
     return format_prompt("Показать следующие 10 результатов? (y/n):")
-
-
