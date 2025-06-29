@@ -12,38 +12,40 @@ _mongo_available = None
 def check_mongo_availability():
     """
     Check if MongoDB is available and working.
+    Returns True if the connection is successful, otherwise False.
+    Caches the result for faster repeated checks.
+    Prints a warning and enables file logging if MongoDB is unavailable.
     """
     global _mongo_available
     if _mongo_available is not None:
         return _mongo_available
-    
     try:
         mongo_config = settings.get_mongo_config()
-        client = MongoClient(mongo_config['uri'], serverSelectionTimeoutMS=3000)
-        # Try to ping the server
-        client.admin.command('ping')
+        client = MongoClient(mongo_config['uri'], 
+                            serverSelectionTimeoutMS=3000)
+        client.admin.command('ping')  # Test connection
         _mongo_available = True
         return True
     except Exception as e:
         _mongo_available = False
-        print(f"⚠ MongoDB недоступен: {e}")
-        print("   Логирование будет производиться в локальный файл")
+        print(f"⚠ MongoDB unavailable: {e}")
+        print("   Logging will be performed to a local file")
         return False
 
 def initialize_mongo():
     """
-    Initialize MongoDB connection for logs and statistics with caching.
+    Initialize a MongoDB connection for logs and statistics with caching.
+    Returns a MongoDB database object.
+    Reuses the connection if it is already open and alive.
     """
     global _mongo_client, _mongo_db
     
     # Return cached connection if exists
     if _mongo_client is not None and _mongo_db is not None:
         try:
-            # Test connection to make sure it's still alive
             _mongo_client.admin.command('ping')
             return _mongo_db
         except Exception:
-            # Connection is dead, reset cache
             _mongo_client = None
             _mongo_db = None
     
@@ -56,7 +58,9 @@ def initialize_mongo():
 
 def initialize_mysql():
     """
-    Initialize MySQL connection for films data with caching.
+    Initialize a MySQL connection for films data with caching.
+    Returns a MySQL connection object.
+    Reuses the connection if it is already open and alive.
     """
     global _mysql_connection
     
@@ -76,7 +80,8 @@ def initialize_mysql():
 
 def close_all_connections():
     """
-    Close all database connections and clear cache.
+    Close all database connections (MongoDB and MySQL) and clear the cache.
+    Use this for proper application shutdown.
     """
     global _mongo_client, _mongo_db, _mysql_connection
     

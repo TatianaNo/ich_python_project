@@ -6,7 +6,12 @@ from ui import (
 
 
 def main():
-    """Main application loop."""
+    """
+    Main application loop.
+    Handles user interaction and menu navigation.
+    Calls appropriate UI functions based on user choice.
+    Loops until the user selects exit.
+    """
     while True:
         show_menu()
         choice = get_menu_choice()        
@@ -39,7 +44,8 @@ def main():
             break
     
     # Close database connections when exiting 
-    
+    # (handled in show_exit_message or db module)
+
 
 if __name__ == "__main__":
     main()

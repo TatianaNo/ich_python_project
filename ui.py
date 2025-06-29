@@ -24,7 +24,9 @@ menu = {
 }
 
 def show_menu():
-    """Display the main menu to the user."""
+    """
+    Display the main menu to the user in the console.
+    """
     clear_screen()
     print(format_title("СИСТЕМА ПОИСКА ФИЛЬМОВ"))
     print(format_section_header("Выберите действие"))
@@ -33,7 +35,11 @@ def show_menu():
     print(format_border())
 
 def get_menu_choice():
-    """Get menu choice from user with validation."""
+    """
+    Prompt the user to select a menu option and validate the input.
+    Returns:
+        str: The selected menu option key.
+    """
     while True:
         choice = input(format_prompt("Введите номер действия:")).strip()
         if choice in menu.keys():
@@ -42,37 +48,34 @@ def get_menu_choice():
             print(format_error("Неверный ввод. Попробуйте снова."))
 
 def get_year_range_choice():
-    """Get year range choice from user with available range info."""
-    
+    """
+    Prompt the user to select a year range for film search.
+    Returns:
+        dict: Dictionary with 'year_from' and 'year_to'.
+    """
     print(format_section_header("Поиск по диапазону годов"))
-    
-    # Get available year range
     year_info = get_year_range()
     min_year, max_year = year_info['min_year'], year_info['max_year']
     if year_info:
         print(format_info(f"Доступный диапазон годов: {min_year} - {max_year}"))
-    
-    # Get year range from user
     year_from = input(format_prompt(f"Введите начальный год (мин: {min_year}):")).strip()
     year_to = input(format_prompt(f"Введите конечный год (макс: {max_year}):")).strip()
-    
-    # Validate years
     try:
         year_from = int(year_from) if year_from else min_year
         year_to = int(year_to) if year_to else max_year
-            
-        # Validate range
         if year_from and year_to and year_from > year_to:
             print(format_error("Начальный год не может быть больше конечного года!"))
             return get_year_range_choice()
-        
         return {'year_from': year_from, 'year_to': year_to}
     except ValueError:
         print(format_error("Неверный формат года. Введите числовое значение."))
         return get_year_range_choice()
 
 def search_film_by_title():
-    
+    """
+    Search for films by title keyword and display paginated results.
+    Prompts the user for a keyword and handles pagination and logging.
+    """
     keyword = input(format_prompt("Введите ключевое слово для поиска в названии фильма:")).strip()
     if not keyword:
         print(format_error("Ключевое слово не может быть пустым!"))
@@ -99,10 +102,13 @@ def search_film_by_title():
             break
         offset += 10
     log_search_query(keyword, 'title', total)
-    
     input(format_wait_prompt())
 
 def search_film_by_genre_and_year():
+    """
+    Search for films by genre and year range, display paginated results.
+    Prompts the user to select a genre and year range, handles pagination and logging.
+    """
     genres = get_all_genres()
     if not genres:
         print(format_error("Не удалось получить список жанров."))
@@ -123,7 +129,6 @@ def search_film_by_genre_and_year():
     genre = genres[int(genre_input)-1]
     print (format_prompt(f"Выбраный жанр: {genre} "))
     year = get_year_range_choice()
-    
     offset = 0
     year["genre"] = genre
     total = count_films_by_genre(year)
@@ -148,8 +153,12 @@ def search_film_by_genre_and_year():
             break
         offset += 10
     log_search_query(f"{genre} {year["year_from"]}-{year["year_to"]}", 'genre_year', total)
-    
+
 def search_film_by_actor():
+    """
+    Search for films by actor name or surname, display paginated results.
+    Prompts the user for part of an actor's name, handles pagination and logging.
+    """
     keyword = input(format_prompt("Введите часть имени или фамилии актёра:")).strip()
     if not keyword:
         print(format_error("Поле не может быть пустым!"))
@@ -179,24 +188,31 @@ def search_film_by_actor():
     log_search_query(keyword, 'actor', total)
 
 def display_popular_queries(limit=5):
-    """Display popular or recent queries using log_stats and formatter."""
-    
+    """
+    Display the most popular search queries using the formatter.
+    Args:
+        limit (int): Number of popular queries to display.
+    """
     print(format_title(f"СТАТИСТИКА ПОПУЛЯРНЫХ {limit} ПОИСКОВЫХ ЗАПРОСОВ", 60))
-    
-    # Get and display popular queries
     popular = get_popular_queries(limit=5)
     print(format_table(popular, ['_id', 'count', 'search_type', 'last_searched']))
     input(format_wait_prompt())
 
 def show_recent_queries(limit=5):
-    """Get recent unique queries from logs."""
+    """
+    Display the most recent unique search queries using the formatter.
+    Args:
+        limit (int): Number of recent queries to display.
+    """
     recent = get_last_queries(limit)
     print(format_title(f"СТАТИСТИКА ПОСЛЕДНИХ {limit} УНИКАЛЬНЫХ ЗАПРОСОВ", 60))
     print(format_table(recent, ['_id', 'count', 'search_type', 'last_searched']))
     input(format_wait_prompt())
-    
+
 def show_exit_message():
-    """Display exit message."""
+    """
+    Display an exit message and close the MySQL connection.
+    """
     print(format_info("Закрытие соединения с базой данных..."))
     print(format_warning("До свидания!"))
     close_mysql_connection()

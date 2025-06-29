@@ -1,10 +1,13 @@
 # Для работы с MySQL
-pymysql
+pymysql           # Драйвер для подключения к MySQL
 
 # Для работы с MongoDB
-pymongo
+pymongo           # Драйвер для подключения к MongoDB
 
-#Для загрузки из файла .env в окружение os.getenv('MONGO_HOST'
-python-dotenv
+# Для загрузки переменных окружения из .env
+python-dotenv     # Позволяет использовать os.getenv с .env-файлом
 
-tabulate
+# Для красивого вывода таблиц в консоли
+tabulate          # Форматирование таблиц для CLI
+
+flake8            # Линтер для проверки кода на соответствие PEP 8

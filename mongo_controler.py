@@ -1,23 +1,22 @@
-# =====================================================
-# MONGODB FUNCTIONS (Logs and Statistics)
-# =====================================================
-
 from datetime import datetime, timezone
 import json
 import os
 
-from db import check_mongo_availability, initialize_mongo
+from db_connector import check_mongo_availability, initialize_mongo
 
 _collection_name = 'search_logs'
 
 def log_search_query(query, search_type, results_count):
     """
-    Log search query to MongoDB or local file for statistics.
+    Log a search query to MongoDB or a local file for statistics.
     
     Args:
-        query (str): Search query text
-        search_type (str): Type of search (keyword, genre_year)
-        results_count (int): Number of results found
+        query (str): Search query text.
+        search_type (str): Type of search (e.g., 'keyword', 'genre_year').
+        results_count (int): Number of results found.
+    
+    Returns:
+        None
     """
     # Try MongoDB first if available
     if check_mongo_availability():
@@ -39,13 +38,13 @@ def log_search_query(query, search_type, results_count):
 
 def get_popular_queries(limit=5):
     """
-    Get most popular search queries from MongoDB or local file.
+    Get the most popular search queries from MongoDB or a local file.
     
     Args:
-        limit (int): Maximum number of queries to return
+        limit (int): Maximum number of queries to return.
     
     Returns:
-        list: List of popular queries with counts
+        list: List of popular queries with counts.
     """
     # Try MongoDB first if available
     if check_mongo_availability():
@@ -63,12 +62,8 @@ def get_popular_queries(limit=5):
                         'last_searched': {'$max': '$timestamp'}
                     }
                 },
-                {
-                    '$sort': {'count': -1}
-                },
-                {
-                    '$limit': limit
-                }
+                {'$sort': {'count': -1}},
+                {'$limit': limit}
             ]
             
             results = list(logs_collection.aggregate(pipeline))
@@ -79,13 +74,13 @@ def get_popular_queries(limit=5):
 
 def get_last_queries(limit=10):
     """
-    Get recent unique queries from MongoDB or local file.
+    Get recent unique queries from MongoDB or a local file.
     
     Args:
-        limit (int): Maximum number of queries to return
+        limit (int): Maximum number of queries to return.
     
     Returns:
-        list: List of recent unique queries with counts
+        list: List of recent unique queries with counts.
     """
     # Try MongoDB first if available
     if check_mongo_availability():
@@ -103,12 +98,8 @@ def get_last_queries(limit=10):
                         'last_searched': {'$max': '$timestamp'}
                     }
                 },
-                {
-                    '$sort': {'last_searched': -1}
-                },
-                {
-                    '$limit': limit
-                }
+                {'$sort': {'last_searched': -1}},
+                {'$limit': limit}
             ]
             
             results = list(logs_collection.aggregate(pipeline))
@@ -127,4 +118,4 @@ def get_last_queries(limit=10):
         logs.sort(key=lambda x: x['timestamp'], reverse=True)
         return logs[:limit]
     
-    return []            
+    return []

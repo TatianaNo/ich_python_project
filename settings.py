@@ -7,7 +7,8 @@ load_dotenv()
 
 class Settings:
     """
-    Application settings loaded from environment variables
+    Application settings loaded from environment variables.
+    Provides access to MongoDB and MySQL configuration for the project.
     """
     
     # MongoDB settings (for logs and statistics)
@@ -27,8 +28,11 @@ class Settings:
     @classmethod
     def get_mongo_connection_string(cls):
         """
-        Build MongoDB connection string based on settings with proper URL encoding.
+        Build a MongoDB connection string based on current settings with proper URL encoding.
         Supports both regular MongoDB and MongoDB Atlas (SRV) connections.
+        
+        Returns:
+            str: MongoDB connection URI.
         """
         if cls.MONGO_USERNAME and cls.MONGO_PASSWORD:
             username = quote_plus(cls.MONGO_USERNAME)
@@ -40,7 +44,10 @@ class Settings:
     @classmethod
     def get_mongo_config(cls):
         """
-        Get MongoDB connection configuration
+        Get MongoDB connection configuration as a dictionary.
+        
+        Returns:
+            dict: MongoDB connection parameters (uri, host, port, database, username, password).
         """
         return {
             'uri': cls.get_mongo_connection_string(),
@@ -54,7 +61,10 @@ class Settings:
     @classmethod
     def get_mysql_config(cls):
         """
-        Get MySQL connection configuration
+        Get MySQL connection configuration as a dictionary.
+        
+        Returns:
+            dict: MySQL connection parameters (host, port, user, password, database, charset, autocommit).
         """
         config = {
             'host': cls.MYSQL_HOST,
