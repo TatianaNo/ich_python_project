@@ -161,21 +161,22 @@ def search_film_by_genre_and_year():
         return
     genre = genres[int(genre_input) - 1]
     print(format_prompt(f"Выбраный жанр: {genre} "))
-    year = get_year_range_choice()
+    choice_years = get_year_range_choice()
     offset = 0
-    year["genre"] = genre
-    total = count_films_by_genre(year)
+    choice_years["genre"] = genre
+    total = count_films_by_genre(choice_years)
     if total == 0:
         print(format_error("Фильмы не найдены."))
         input(format_wait_prompt())
         return
     while True:
-        films, headers = find_films_by_criteria(year, limit=10, skip=offset)
+        films, headers = find_films_by_criteria(choice_years, limit=10, skip=offset)
         if not films:
             print(format_info("Больше результатов нет."))
             input(format_wait_prompt())
             break
         formatted_lines = format_table(films, headers)
+        print(format_title(f"ПОКАЗАНЫ ФИЛЬМЫ ЖАНРА {genre} С {choice_years["year_from"]} ПО {choice_years["year_to"]}", 60))
         print(formatted_lines)
         print(format_pagination_info(offset // 10 + 1, total, 10))
         if offset + 10 >= total:
@@ -191,7 +192,7 @@ def search_film_by_genre_and_year():
             break
         offset += 10
     log_search_query(
-        f"{genre} {year["year_from"]}-{year["year_to"]}", "genre_year", total
+        f"{genre} {choice_years["year_from"]}-{choice_years["year_to"]}", "genre_year", total
     )
 
 
@@ -208,7 +209,7 @@ def search_film_by_actor():
     offset = 0
     total = count_films_by_actor(keyword)
     if total == 0:
-        print(format_error("Фильмы не найдены."))
+        print(format_error(f'Фильмы с актером, содержащим "{keyword}" не найдены.'))
         input(format_wait_prompt())
         return
     while True:
