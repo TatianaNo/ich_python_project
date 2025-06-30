@@ -1,13 +1,11 @@
 import pymysql
 from pymongo import MongoClient
 from settings import settings
+from functools import lru_cache
+import logging
+import re
 
-# Global variables for connection caching
-_mongo_client = None
-_mongo_db = None
-_mysql_connection = None
-_mongo_available = None
-
+logger = logging.getLogger(__name__)
 
 def check_mongo_availability():
     """
@@ -16,20 +14,24 @@ def check_mongo_availability():
     Caches the result for faster repeated checks.
     Prints a warning and enables file logging if MongoDB is unavailable.
     """
-    global _mongo_available
-    if _mongo_available is not None:
-        return _mongo_available
     try:
         mongo_config = settings.get_mongo_config()
         client = MongoClient(mongo_config["uri"], serverSelectionTimeoutMS=3000)
         client.admin.command("ping")  # Test connection
-        _mongo_available = True
+        logger.info("MongoDB is available")
         return True
     except Exception as e:
-        _mongo_available = False
-        print(f"⚠ MongoDB unavailable: {e}")
-        print("   Logging will be performed to a local file")
+        logger.error(f"⚠ MongoDB unavailable: {e}")
         return False
+
+
+@lru_cache(maxsize=1)
+def get_mongo_client():
+    connection_string = settings.get_mongo_connection_string()
+    # находим между ":" и "@" и заменяем на "***@"
+    safe_uri = re.sub(r":[^:@]+@", ":***@", connection_string)  
+    logger.info(f"Connecting to MongoDB at {safe_uri}")
+    return MongoClient(connection_string)
 
 
 def initialize_mongo():
@@ -38,23 +40,24 @@ def initialize_mongo():
     Returns a MongoDB database object.
     Reuses the connection if it is already open and alive.
     """
-    global _mongo_client, _mongo_db
+    client = get_mongo_client()
+    db = client[settings.MONGO_DB_NAME]
+    try:
+        client.admin.command("ping")
+        logger.info("MongoDB connection successful")
+        return db
+    except Exception:
+        logger.warning("MongoDB connection failed, reinitializing...")
+        get_mongo_client.cache_clear()
+        client = get_mongo_client()
+        db = client[settings.MONGO_DB_NAME]
+        return db
 
-    # Return cached connection if exists
-    if _mongo_client is not None and _mongo_db is not None:
-        try:
-            _mongo_client.admin.command("ping")
-            return _mongo_db
-        except Exception:
-            _mongo_client = None
-            _mongo_db = None
 
-    # Create new connection
-    connection_string = settings.get_mongo_connection_string()
-    _mongo_client = MongoClient(connection_string)
-    _mongo_db = _mongo_client[settings.MONGO_DB_NAME]
-
-    return _mongo_db
+@lru_cache(maxsize=1)
+def get_mysql_connection():
+    config = settings.get_mysql_config()
+    return pymysql.connect(**config)
 
 
 def initialize_mysql():
@@ -63,21 +66,16 @@ def initialize_mysql():
     Returns a MySQL connection object.
     Reuses the connection if it is already open and alive.
     """
-    global _mysql_connection
-
-    # Return cached connection if exists and is alive
-    if _mysql_connection is not None:
-        try:
-            _mysql_connection.ping(reconnect=True)
-            return _mysql_connection
-        except Exception:
-            _mysql_connection = None
-
-    # Create new connection
-    config = settings.get_mysql_config()
-    _mysql_connection = pymysql.connect(**config)
-
-    return _mysql_connection
+    conn = get_mysql_connection()
+    try:
+        conn.ping(reconnect=True)
+        logger.info("MySQL connection successful")
+        return conn
+    except Exception:
+        get_mysql_connection.cache_clear()
+        conn = get_mysql_connection()
+        logger.warning("Reinitialized MySQL connection")
+        return conn
 
 
 def close_all_connections():
@@ -85,18 +83,25 @@ def close_all_connections():
     Close all database connections (MongoDB and MySQL) and clear the cache.
     Use this for proper application shutdown.
     """
-    global _mongo_client, _mongo_db, _mysql_connection
-
     # Close MongoDB connection
-    if _mongo_client:
-        _mongo_client.close()
-        _mongo_client = None
-        _mongo_db = None
+    try:
+        client = get_mongo_client()
+        client.close()
+        logger.info("MongoDB connection closed")
+    except Exception:
+        logger.error("Failed to close MongoDB connection")
+        pass
+    get_mongo_client.cache_clear()
 
     # Close MySQL connection
-    if _mysql_connection:
-        _mysql_connection.close()
-        _mysql_connection = None
+    try:
+        conn = get_mysql_connection()
+        conn.close()
+        logger.info("MySQL connection closed")
+    except Exception:
+        logger.error("Failed to close MySQL connection")
+        pass
+    get_mysql_connection.cache_clear()
 
 
 # Alias for backward compatibility

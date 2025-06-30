@@ -1,4 +1,5 @@
 # Main application entry point
+import pathlib
 from ui import (
     show_recent_queries,
     show_menu,
@@ -9,7 +10,15 @@ from ui import (
     search_film_by_genre_and_year,
     search_film_by_actor,
 )
+import logging
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    filename=pathlib.Path(__file__).with_name("app.log"),  # ./app.log рядом с main.py
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    encoding="utf-8",
+)
 
 def main():
     """

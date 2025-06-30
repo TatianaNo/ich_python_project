@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 # UI module for user interaction - only user interface logic
 from formatter import (
     clear_screen,
@@ -86,7 +90,8 @@ def get_year_range_choice():
             print(format_error("Начальный год не может быть больше конечного года!"))
             return get_year_range_choice()
         return {"year_from": year_from, "year_to": year_to}
-    except ValueError:
+    except ValueError as e:
+        logger.error("Ошибка преобразования года:", e)
         print(format_error("Неверный формат года. Введите числовое значение."))
         return get_year_range_choice()
 

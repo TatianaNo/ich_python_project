@@ -1,6 +1,8 @@
 import pymysql
 from db_connector import close_all_connections, initialize_mysql
+import logging
 
+logger = logging.getLogger(__name__)
 
 def get_head_row_from_mysql(query, params=None):
     """
@@ -36,7 +38,7 @@ def get_from_mysql(query, params=None) -> list:
         results = cursor.fetchall()
         return results
     except Exception as e:
-        print(f"Error executing query: {e}")
+        logger.error(f"Error executing query: {e}")
         return []
 
 
@@ -65,7 +67,7 @@ def find_films_by_keyword(keyword, limit=10, skip=0):
         row, header = get_head_row_from_mysql(query, params)
         return row, header
     except Exception as e:
-        print(f"Error searching films by keyword '{keyword}': {e}")
+        logger.error(f"Error searching films by keyword '{keyword}': {e}")
         return []
 
 
@@ -106,7 +108,7 @@ def find_films_by_criteria(filter: dict, limit=10, skip=0):
         results, headers = get_head_row_from_mysql(query, tuple(param))
         return results, headers
     except Exception as e:
-        print(f"Error searching films by criteria: {e}")
+        logger.error(f"Error searching films by criteria: {e}")
         return []
 
 
@@ -124,7 +126,7 @@ def get_all_genres():
         results = get_from_mysql(query)
         return [result["genre"] for result in results]
     except Exception as e:
-        print(f"Error getting genres: {e}")
+        logger.error(f"Error getting genres: {e}")
         return []
 
 
@@ -148,7 +150,7 @@ def count_films_by_genre(filtr):
         results = get_from_mysql(query, params)
         return results[0]["count_film"] if results else 0
     except Exception as e:
-        print(f"Error counting films by genre: {e}")
+        logger.error(f"Error counting films by genre: {e}")
         return 0
 
 
@@ -170,7 +172,7 @@ def count_films_by_keyword(keyword):
         result = get_from_mysql(sql, (search_pattern,))
         return result[0]["total"] if result else 0
     except Exception as e:
-        print(f"Error counting films by keyword '{keyword}': {e}")
+        logger.error(f"Error counting films by keyword '{keyword}': {e}")
         return 0
 
 
@@ -194,7 +196,7 @@ def count_films_by_actor(actor_keyword):
         result = get_from_mysql(query, (like_keyword, like_keyword))
         return result[0]["ct"] if result else 0
     except Exception as e:
-        print(f"Error counting films by actor '{actor_keyword}': {e}")
+        logger.error(f"Error counting films by actor '{actor_keyword}': {e}")
         return 0
 
 
@@ -230,7 +232,7 @@ def find_films_by_actor_with_genre(actor_keyword, limit=10, skip=0):
         )
         return results, headers
     except Exception as e:
-        print(f"Error searching films by actor '{actor_keyword}': {e}")
+        logger.error(f"Error searching films by actor '{actor_keyword}': {e}")
         return []
 
 
@@ -251,7 +253,7 @@ def get_year_range():
         else:
             return None
     except Exception as e:
-        print(f"Error getting year range: {e}")
+        logger.error(f"Error getting year range: {e}")
         return None
 
 

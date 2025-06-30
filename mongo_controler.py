@@ -3,7 +3,9 @@ import json
 import os
 
 from db_connector import check_mongo_availability, initialize_mongo
+import logging
 
+logger = logging.getLogger(__name__)
 _collection_name = "search_logs"
 
 
@@ -35,7 +37,7 @@ def log_search_query(query, search_type, results_count):
             return
 
         except Exception as e:
-            print(f"Error logging to MongoDB: {e}")
+            logger.error(f"Error logging to MongoDB: {e}")
 
 
 def get_popular_queries(limit=5):
@@ -72,7 +74,7 @@ def get_popular_queries(limit=5):
             return results
 
         except Exception as e:
-            print(f"Error getting popular queries from MongoDB: {e}")
+            logger.error(f"Error getting popular queries from MongoDB: {e}")
 
 
 def get_last_queries(limit=10):
@@ -109,7 +111,7 @@ def get_last_queries(limit=10):
             return results
 
         except Exception as e:
-            print(f"Error getting recent queries from MongoDB: {e}")
+            logger.error(f"Error getting recent queries from MongoDB: {e}")
 
     # Fallback to local file logging if MongoDB is not available
     log_file_path = "local_search_log.json"
