@@ -101,6 +101,8 @@ def search_film_by_title():
     Search for films by title keyword and display paginated results.
     Prompts the user for a keyword and handles pagination and logging.
     """
+    print("Вы выбрали поиск по названию.")
+
     keyword = input(
         format_prompt("Введите ключевое слово для поиска в названии фильма:")
     ).strip()
@@ -142,6 +144,8 @@ def search_film_by_genre_and_year():
     Search for films by genre and year range, display paginated results.
     Prompts the user to select a genre and year range, handles pagination and logging.
     """
+    print("Вы выбрали поиск по жанру и диапазону годов.")
+
     genres = get_all_genres()
     if not genres:
         print(format_error("Не удалось получить список жанров."))
@@ -201,6 +205,8 @@ def search_film_by_actor():
     Search for films by actor name or surname, display paginated results.
     Prompts the user for part of an actor's name, handles pagination and logging.
     """
+    print("Вы выбрали поиск по актеру.")
+    
     keyword = input(format_prompt("Введите часть имени или фамилии актёра:")).strip()
     if not keyword:
         print(format_error("Поле не может быть пустым!"))
@@ -253,6 +259,8 @@ def show_recent_queries(limit=5):
     Args:
         limit (int): Number of recent queries to display.
     """
+    print("Последние уникальные запросы:")
+    
     recent = get_last_queries(limit)
     print(format_title(f"СТАТИСТИКА ПОСЛЕДНИХ {limit} УНИКАЛЬНЫХ ЗАПРОСОВ", 60))
     print(format_table(recent, ["_id", "count", "search_type", "last_searched"]))

@@ -18,6 +18,8 @@ class Settings:
     MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "film_logs")
     MONGO_USERNAME = os.getenv("MONGO_USERNAME", "")
     MONGO_PASSWORD = os.getenv("MONGO_PASSWORD", "")
+    MONGO_COLLECTION=os.getenv("MONGO_COLLECTION", "")
+    MONGO_TYPE=os.getenv("MONGO_TYPE", "")
 
     # MySQL settings (for films data)
     MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")
@@ -25,6 +27,7 @@ class Settings:
     MYSQL_DB_NAME = os.getenv("MYSQL_DB_NAME", "films_database")
     MYSQL_USERNAME = os.getenv("MYSQL_USERNAME", "root")
     MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "")
+
 
     @classmethod
     def get_mongo_connection_string(cls):
@@ -35,12 +38,20 @@ class Settings:
         Returns:
             str: MongoDB connection URI.
         """
-        if cls.MONGO_USERNAME and cls.MONGO_PASSWORD:
-            username = quote_plus(cls.MONGO_USERNAME)
-            password = quote_plus(cls.MONGO_PASSWORD)
-            return f"mongodb+srv://{username}:{password}@{cls.MONGO_HOST}/"
+        if cls.MONGO_TYPE == "db":
+            if cls.MONGO_USERNAME and cls.MONGO_PASSWORD:
+                username = quote_plus(cls.MONGO_USERNAME)
+                password = quote_plus(cls.MONGO_PASSWORD)
+                return f"mongodb://{username}:{password}@{cls.MONGO_HOST}:{cls.MONGO_PORT}/{cls.MONGO_DB_NAME}"
+            else:
+                return f"mongodb://{cls.MONGO_HOST}:{cls.MONGO_PORT}/{cls.MONGO_DB_NAME}"
         else:
-            return f"mongodb+srv://{cls.MONGO_HOST}/"
+            if cls.MONGO_USERNAME and cls.MONGO_PASSWORD:
+                username = quote_plus(cls.MONGO_USERNAME)
+                password = quote_plus(cls.MONGO_PASSWORD)
+                return f"mongodb+srv://{username}:{password}@{cls.MONGO_HOST}/"
+            else:
+                return f"mongodb+srv://{cls.MONGO_HOST}/"
 
     @classmethod
     def get_mongo_config(cls):

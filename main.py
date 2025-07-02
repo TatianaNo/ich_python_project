@@ -32,17 +32,14 @@ def main():
         choice = get_menu_choice()
         if choice == "1":
             # Search by title
-            print("Вы выбрали поиск по названию.")
             search_film_by_title()
 
         elif choice == "2":
             # Search by genre and year range
-            print("Вы выбрали поиск по жанру и диапазону годов.")
             search_film_by_genre_and_year()
 
         elif choice == "3":
-            # Search by actor
-            print("Вы выбрали поиск по актеру.")
+            # Search by actor  
             search_film_by_actor()
 
         elif choice == "4":
@@ -51,7 +48,6 @@ def main():
 
         elif choice == "5":
             # View recent unique queries
-            print("Последние уникальные запросы:")
             show_recent_queries()
 
         elif choice == "0":

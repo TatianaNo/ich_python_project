@@ -6,6 +6,7 @@ import logging
 import re
 
 logger = logging.getLogger(__name__)
+collection_name = settings.MONGO_COLLECTION
 
 def check_mongo_availability():
     """

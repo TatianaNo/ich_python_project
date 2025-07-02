@@ -2,11 +2,11 @@ from datetime import datetime, timezone
 import json
 import os
 
-from db_connector import check_mongo_availability, initialize_mongo
+from db_connector import check_mongo_availability, initialize_mongo, collection_name
 import logging
 
 logger = logging.getLogger(__name__)
-_collection_name = "search_logs"
+
 
 
 def log_search_query(query, search_type, results_count):
@@ -25,7 +25,7 @@ def log_search_query(query, search_type, results_count):
     if check_mongo_availability():
         try:
             mongo_db = initialize_mongo()
-            logs_collection = mongo_db[_collection_name]
+            logs_collection = mongo_db[collection_name]
             log_entry = {
                 "query": query,
                 "search_type": search_type,
@@ -54,7 +54,7 @@ def get_popular_queries(limit=5):
     if check_mongo_availability():
         try:
             mongo_db = initialize_mongo()
-            logs_collection = mongo_db[_collection_name]
+            logs_collection = mongo_db[collection_name]
 
             # Aggregate pipeline to count queries by text
             pipeline = [
@@ -91,7 +91,7 @@ def get_last_queries(limit=10):
     if check_mongo_availability():
         try:
             mongo_db = initialize_mongo()
-            logs_collection = mongo_db[_collection_name]
+            logs_collection = mongo_db[collection_name]
 
             # Aggregate pipeline to get recent unique queries
             pipeline = [
